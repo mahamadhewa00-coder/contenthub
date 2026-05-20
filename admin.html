@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentHub Admin | Manage Content</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Gate -->
+    <div id="login-gate">
+        <div class="login-card">
+            <div class="logo"><span class="accent">Content</span>Hub Admin</div>
+            <p>Please enter the administrator password</p>
+            <input type="password" id="admin-password" placeholder="Password">
+            <button id="login-btn">Login</button>
+            <p id="login-error" class="error hidden">Invalid password</p>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="hidden">
+        <header>
+            <div class="container">
+                <div class="logo"><span class="accent">Content</span>Hub Admin</div>
+                <div class="header-actions">
+                    <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Total Entries</div>
+                    <div id="stat-total" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Added Today</div>
+                    <div id="stat-today" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Files</div>
+                    <div id="stat-files" class="stat-value">0</div>
+                </div>
+            </div>
+
+            <!-- Storage Indicator -->
+            <div class="storage-container">
+                <div class="storage-header">
+                    <span><i class="fas fa-database"></i> Storage Status</span>
+                    <span id="storage-filename">data1.json</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="storage-progress" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="storage-footer">
+                    <span id="storage-usage">0 bytes / 90 KB</span>
+                    <span id="storage-percentage">0% used</span>
+                </div>
+            </div>
+
+            <!-- Search and Add -->
+            <div class="actions-row">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="admin-search" placeholder="Search entries...">
+                </div>
+                <button id="add-entry-btn" class="primary-btn"><i class="fas fa-plus"></i> Add New Entry</button>
+            </div>
+
+            <!-- Entry List -->
+            <div id="admin-entry-list" class="entry-list">
+                <!-- Entries will be loaded here -->
+            </div>
+        </main>
+
+        <!-- Sticky Save Button -->
+        <button id="sticky-save-btn" class="sticky-btn hidden">
+            <i class="fas fa-rocket"></i> Save & Update Site
+        </button>
+
+        <!-- Slide-up Drawer Form -->
+        <div id="form-overlay" class="overlay hidden"></div>
+        <div id="entry-drawer" class="drawer hidden">
+            <div class="drawer-header">
+                <h2 id="drawer-title">Add New Entry</h2>
+                <button id="close-drawer" class="close-btn">&times;</button>
+            </div>
+            <form id="entry-form">
+                <input type="hidden" id="entry-id">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="form-title" required placeholder="e.g. Awesome Resource">
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="form-description" required rows="3" placeholder="Describe this content..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="form-image" placeholder="https://...">
+                    <div id="image-preview" class="image-preview hidden">
+                        <img id="preview-img" src="" alt="Preview">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Link URL</label>
+                    <input type="url" id="form-link" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma separated)</label>
+                    <input type="text" id="form-tags" placeholder="tech, free, design">
+                </div>
+                <div class="config-divider">Configuration</div>
+                <div class="form-group">
+                    <label>Backend API URL</label>
+                    <input type="url" id="form-api-url" placeholder="https://your-api.render.com">
+                </div>
+                <div class="form-group">
+                    <label>API Secret Key</label>
+                    <input type="password" id="form-api-key" placeholder="Enter your secret key">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="save-entry-btn" class="primary-btn">Save Entry</button>
+                    <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+
+        <!-- Confirm Dialog -->
+        <div id="confirm-overlay" class="overlay hidden" style="z-index: 2000;">
+            <div class="confirm-dialog">
+                <h3>Are you sure?</h3>
+                <p>This action cannot be undone.</p>
+                <div class="confirm-actions">
+                    <button id="confirm-delete-btn" class="danger-btn">Delete</button>
+                    <button id="cancel-delete-btn" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

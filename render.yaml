@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: contenthub-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend:app
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_USER
+        sync: false
+      - key: GITHUB_REPO
+        sync: false
+      - key: GITHUB_BRANCH
+        value: main
+      - key: API_SECRET
+        sync: false
+      - key: MAX_FILE_BYTES
+        value: "90000"
+      - key: ALLOWED_ORIGINS
+        value: "*"

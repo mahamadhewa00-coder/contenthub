@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentHub | Discover Amazing Content</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <span class="accent">Content</span>Hub
+            </div>
+            <nav>
+                <a href="#home">Home</a>
+                <a href="admin.html" class="admin-link">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="container">
+                <h1>Find your next <span class="accent">inspiration</span></h1>
+                <p>A curated collection of resources, tools, and content.</p>
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search by title, description or tags...">
+                </div>
+                <div id="tag-filters" class="tag-chips">
+                    <!-- Tags will be dynamically inserted here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="content">
+            <div class="container">
+                <div id="loading-state" class="state">
+                    <div class="spinner"></div>
+                    <p>Loading amazing content...</p>
+                </div>
+                <div id="error-state" class="state hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Oops! Something went wrong while fetching data.</p>
+                    <button onclick="window.location.reload()">Try Again</button>
+                </div>
+                <div id="empty-state" class="state hidden">
+                    <i class="fas fa-search-minus"></i>
+                    <p>No results found for your search.</p>
+                </div>
+                <div id="card-grid" class="grid">
+                    <!-- Cards will be dynamically inserted here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 ContentHub. Built with <i class="fas fa-heart"></i> and GitHub.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
