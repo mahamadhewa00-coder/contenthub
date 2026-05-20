@@ -26,26 +26,38 @@ def check_auth():
     return api_key == API_SECRET
 
 def github_api_request(method, path, data=None):
+    if not all([GITHUB_TOKEN, GITHUB_USER, GITHUB_REPO]):
+        return None
+
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{path}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    if method == "GET":
-        response = requests.get(url, headers=headers, params={"ref": GITHUB_BRANCH})
-    elif method == "PUT":
-        response = requests.put(url, headers=headers, json=data)
-    elif method == "DELETE":
-        response = requests.delete(url, headers=headers, json=data)
-    return response
+    try:
+        if method == "GET":
+            response = requests.get(url, headers=headers, params={"ref": GITHUB_BRANCH}, timeout=10)
+        elif method == "PUT":
+            response = requests.put(url, headers=headers, json=data, timeout=10)
+        elif method == "DELETE":
+            response = requests.delete(url, headers=headers, json=data, timeout=10)
+        else:
+            return None
+        return response
+    except requests.exceptions.RequestException:
+        return None
 
 def get_file_content(path):
     response = github_api_request("GET", path)
-    if response.status_code == 200:
-        content_b64 = response.json()['content']
-        sha = response.json()['sha']
-        content = json.loads(base64.b64decode(content_b64).decode('utf-8'))
-        size = response.json()['size']
+    if response and response.status_code == 200:
+        res_json = response.json()
+        content_b64 = res_json.get('content', '')
+        sha = res_json.get('sha')
+        size = res_json.get('size', 0)
+        try:
+            content = json.loads(base64.b64decode(content_b64).decode('utf-8'))
+        except Exception:
+            content = {"entries": []}
         return content, sha, size
     return None, None, 0
 
@@ -63,50 +75,66 @@ def save_file_content(path, content, sha=None, message="Update data"):
     return response
 
 def get_all_data_files():
+    if not all([GITHUB_TOKEN, GITHUB_USER, GITHUB_REPO]):
+        return []
+
     url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    response = requests.get(url, headers=headers, params={"ref": GITHUB_BRANCH})
-    if response.status_code == 200:
-        files = [f['name'] for f in response.json() if f['name'].startswith('data') and f['name'].endswith('.json')]
-        return sorted(files)
+    try:
+        response = requests.get(url, headers=headers, params={"ref": GITHUB_BRANCH}, timeout=10)
+        if response.status_code == 200:
+            files = [f['name'] for f in response.json() if f['name'].startswith('data') and f['name'].endswith('.json')]
+            return sorted(files)
+    except Exception:
+        pass
     return []
 
-def get_storage_stats():
-    files = get_all_data_files()
+def get_storage_stats(preloaded_files=None):
+    if preloaded_files is None:
+        files = get_all_data_files()
+        preloaded_files = []
+        for f in files:
+            content, sha, size = get_file_content(f)
+            if content:
+                preloaded_files.append({"file": f, "content": content, "size": size})
+
     storage_info = []
     total_entries = 0
     added_today = 0
     today = datetime.utcnow().date().isoformat()
     
-    for f in files:
-        content, sha, size = get_file_content(f)
-        if content:
-            entries = content.get('entries', [])
-            count = len(entries)
-            total_entries += count
-            for e in entries:
-                if e.get('created_at', '').split('T')[0] == today:
-                    added_today += 1
-            storage_info.append({
-                "file": f,
-                "size": size,
-                "percentage": round((size / MAX_FILE_BYTES) * 100, 2),
-                "entries": count
-            })
+    for item in preloaded_files:
+        content = item['content']
+        entries = content.get('entries', [])
+        count = len(entries)
+        total_entries += count
+        for e in entries:
+            if e.get('created_at', '').split('T')[0] == today:
+                added_today += 1
+        storage_info.append({
+            "file": item['file'],
+            "size": item['size'],
+            "percentage": round((item['size'] / MAX_FILE_BYTES) * 100, 2),
+            "entries": count
+        })
     return {
         "files": storage_info,
         "total_entries": total_entries,
-        "total_files": len(files),
+        "total_files": len(storage_info),
         "added_today": added_today,
         "max_file_bytes": MAX_FILE_BYTES
     }
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({"status": "healthy", "timestamp": datetime.utcnow().isoformat()}), 200
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "config_ok": all([GITHUB_TOKEN, GITHUB_USER, GITHUB_REPO, API_SECRET])
+    }), 200
 
 @app.route('/api/storage', methods=['GET'])
 def storage():
@@ -116,16 +144,20 @@ def storage():
 def get_entries():
     files = get_all_data_files()
     all_entries = []
+    preloaded = []
+
     for f in files:
         content, sha, size = get_file_content(f)
         if content:
             all_entries.extend(content.get('entries', []))
+            preloaded.append({"file": f, "content": content, "size": size})
     
     # Sort by created_at desc
     all_entries.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
     return jsonify({
         "entries": all_entries,
-        "storage": get_storage_stats()
+        "storage": get_storage_stats(preloaded)
     }), 200
 
 @app.route('/api/entries', methods=['POST'])
@@ -134,7 +166,7 @@ def create_entry():
         return jsonify({"error": "Unauthorized"}), 401
     
     data = request.json
-    if not data.get('title') or not data.get('description'):
+    if not data or not data.get('title') or not data.get('description'):
         return jsonify({"error": "Title and Description are required"}), 400
     
     new_entry = {
@@ -150,17 +182,17 @@ def create_entry():
 
     files = get_all_data_files()
     if not files:
-        files = ['data1.json']
-    
-    target_file = files[-1]
-    content, sha, size = get_file_content(target_file)
-    
-    if not content:
-        content = {
-            "meta": {"file": target_file, "created": datetime.utcnow().isoformat(), "entry_count": 0},
-            "entries": []
-        }
+        target_file = 'data1.json'
+        content = {"meta": {"file": target_file, "created": datetime.utcnow().isoformat()}, "entries": []}
         sha = None
+        size = 0
+    else:
+        target_file = files[-1]
+        content, sha, size = get_file_content(target_file)
+        if not content:
+            content = {"meta": {"file": target_file, "created": datetime.utcnow().isoformat()}, "entries": []}
+            sha = None
+            size = 0
 
     # Check if we need to partition
     if size > MAX_FILE_BYTES:
@@ -178,12 +210,12 @@ def create_entry():
     
     resp = save_file_content(target_file, content, sha, message=f"Add entry: {new_entry['title']}")
     
-    if resp.status_code in [200, 201]:
+    if resp and resp.status_code in [200, 201]:
         return jsonify({
             "entry": new_entry,
             "storage": get_storage_stats()
         }), 201
-    return jsonify({"error": "Failed to save to GitHub", "details": resp.text}), 500
+    return jsonify({"error": "Failed to save to GitHub", "details": resp.text if resp else "No response"}), 500
 
 @app.route('/api/entries/<id>', methods=['PUT'])
 def update_entry(id):
@@ -197,6 +229,7 @@ def update_entry(id):
         content, sha, size = get_file_content(f)
         if not content: continue
         
+        found = False
         for entry in content['entries']:
             if entry['id'] == id:
                 entry.update({
@@ -207,12 +240,16 @@ def update_entry(id):
                     "tags": [tag.strip() for tag in data.get('tags', '').split(',') if tag.strip()] if isinstance(data.get('tags'), str) else data.get('tags', entry['tags']),
                     "updated_at": datetime.utcnow().isoformat()
                 })
-                content['meta']['last_updated'] = datetime.utcnow().isoformat()
-                save_file_content(f, content, sha, message=f"Update entry: {entry['title']}")
-                return jsonify({
-                    "entry": entry,
-                    "storage": get_storage_stats()
-                }), 200
+                found = True
+                break
+
+        if found:
+            content['meta']['last_updated'] = datetime.utcnow().isoformat()
+            save_file_content(f, content, sha, message=f"Update entry: {id}")
+            return jsonify({
+                "entry": next(e for e in content['entries'] if e['id'] == id),
+                "storage": get_storage_stats()
+            }), 200
                 
     return jsonify({"error": "Entry not found"}), 404
 
@@ -245,16 +282,20 @@ def search():
     query = request.args.get('q', '').lower()
     files = get_all_data_files()
     results = []
+    preloaded = []
+
     for f in files:
         content, sha, size = get_file_content(f)
         if content:
+            preloaded.append({"file": f, "content": content, "size": size})
             for e in content['entries']:
-                if query in e['title'].lower() or query in e['description'].lower() or any(query in t.lower() for t in e['tags']):
+                if query in e['title'].lower() or query in e['description'].lower() or any(query in t.lower() for t in e.get('tags', [])):
                     results.append(e)
+
     return jsonify({
         "results": results,
-        "storage": get_storage_stats()
+        "storage": get_storage_stats(preloaded)
     }), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

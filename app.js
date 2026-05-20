@@ -5,7 +5,8 @@ const CONFIG = {
     GITHUB_USER: "mahamadhewa00-coder",
     GITHUB_REPO: "contenthub-data",
     GITHUB_BRANCH: "main",
-    // الرابط المباشر للملف
+    API_URL: "", // Optional: e.g. "https://your-api.render.com"
+    // الرابط المباشر للملف (Fallback)
     get dataUrl() {
         return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}/data1.json`;
     }
@@ -37,13 +38,23 @@ async function init() {
 async function fetchData() {
     showState('loading');
     try {
-        // إضافة وقت عشوائي في نهاية الرابط لتجاوز الكاش (Cache)
-        const response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
-        if (!response.ok) throw new Error("Network error");
-        
-        const data = await response.json();
-        // إذا كان الملف عبارة عن مصفوفة مباشرة
-        allEntries = Array.isArray(data) ? data : (data.entries || []);
+        let response;
+        // If API_URL is provided, use it to get all entries (including partitioned ones)
+        if (CONFIG.API_URL) {
+            response = await fetch(`${CONFIG.API_URL}/api/entries`);
+            if (response.ok) {
+                const data = await response.json();
+                allEntries = data.entries || [];
+            } else {
+                throw new Error("API call failed");
+            }
+        } else {
+            // Fallback to raw GitHub data (only data1.json)
+            response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
+            if (!response.ok) throw new Error("Network error");
+            const data = await response.json();
+            allEntries = Array.isArray(data) ? data : (data.entries || []);
+        }
         
         if (allEntries.length === 0) {
             showState('empty');
@@ -83,8 +94,8 @@ function filterByTag(tag) {
 function handleSearch() {
     const query = searchInput.value.toLowerCase();
     const filtered = allEntries.filter(entry => {
-        const matchesQuery = entry.title.toLowerCase().includes(query) || 
-                             entry.description.toLowerCase().includes(query) ||
+        const matchesQuery = (entry.title || "").toLowerCase().includes(query) ||
+                             (entry.description || "").toLowerCase().includes(query) ||
                              (entry.tags && entry.tags.some(t => t.toLowerCase().includes(query)));
         
         const matchesTag = activeTag === 'All' || (entry.tags && entry.tags.includes(activeTag));
@@ -101,14 +112,14 @@ function renderCards(entries) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <img src="${entry.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${entry.title}" class="card-image">
+            <img src="${entry.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${entry.title}" class="card-image" onerror="this.src='https://via.placeholder.com/400x200?text=Error+Loading+Image'">
             <div class="card-body">
                 <h3 class="card-title">${entry.title}</h3>
                 <p class="card-description">${entry.description}</p>
                 <div class="card-tags">
                     ${(entry.tags || []).map(tag => `<span class="card-tag">${tag}</span>`).join('')}
                 </div>
-                <a href="${entry.link}" target="_blank" class="card-btn">View Resource</a>
+                <a href="${entry.link || '#'}" target="_blank" class="card-btn">View Resource</a>
             </div>
         `;
         cardGrid.appendChild(card);
