@@ -1,14 +1,11 @@
 /**
  * ContentHub Public Site Logic
- * 
- * CONFIGURATION:
- * Change these values to point to your own GitHub repository
  */
 const CONFIG = {
-    GITHUB_USER: "YOUR_GITHUB_USERNAME",
-    GITHUB_REPO: "YOUR_DATA_REPO_NAME",
+    GITHUB_USER: "mahamadhewa00-coder",
+    GITHUB_REPO: "contenthub-data",
     GITHUB_BRANCH: "main",
-    // Base URL for GitHub Raw content
+    // بەکارهێنانی لینکی raw ڕاستەوخۆ
     get rawBaseUrl() {
         return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}`;
     }
@@ -25,16 +22,11 @@ const loadingState = document.getElementById('loading-state');
 const errorState = document.getElementById('error-state');
 const emptyState = document.getElementById('empty-state');
 
-/**
- * Initialize the application
- */
 async function init() {
     try {
         await fetchData();
         renderTags();
         renderCards(allEntries);
-        
-        // Setup Search Listener
         searchInput.addEventListener('input', handleSearch);
     } catch (error) {
         console.error("Initialization failed:", error);
@@ -42,47 +34,35 @@ async function init() {
     }
 }
 
-/**
- * Fetch data from GitHub auto-discovering partitions
- */
 async function fetchData() {
     showState('loading');
-    let fileIndex = 1;
-    let hasMore = true;
     allEntries = [];
 
-    while (hasMore) {
-        try {
-            const response = await fetch(`${CONFIG.rawBaseUrl}/data${fileIndex}.json?t=${Date.now()}`);
-            if (!response.ok) {
-                hasMore = false;
-                break;
-            }
-            const data = await response.json();
-            if (data.entries && Array.isArray(data.entries)) {
-                allEntries = [...allEntries, ...data.entries];
-            }
-            fileIndex++;
-        } catch (e) {
-            hasMore = false;
+    try {
+        // بانگکردنی فایلەکەت ڕاستەوخۆ
+        const response = await fetch(`${CONFIG.rawBaseUrl}/data1.json?t=${Date.now()}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+        
+        const data = await response.json();
+        
+        // ئەگەر فایلەکە ڕاستەوخۆ لیستە یان ئۆبجێکتێکە کە 'entries' ی تێدایە
+        allEntries = Array.isArray(data) ? data : (data.entries || []);
+        
+        if (allEntries.length === 0) {
+            showState('empty');
+            return;
         }
-    }
 
-    if (allEntries.length === 0 && fileIndex === 1) {
-        // Not necessarily an error, could be a fresh repo. 
-        // We'll show the empty state instead of error state.
-        showState('empty');
-        return;
+        showState('grid');
+    } catch (e) {
+        console.error(e);
+        showState('error');
     }
-
-    // Sort by date desc
-    allEntries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    showState('grid');
 }
 
-/**
- * Render Tag Filter Chips
- */
+// ... (باقی کۆدەکانی تریش وەک خۆیان بهێڵەرەوە) ...
+// تەنها renderTags و renderCards و ئەوانی تر وەک خۆیان بەکاربێنە
+
 function renderTags() {
     const tags = new Set(['All']);
     allEntries.forEach(entry => {
@@ -101,51 +81,33 @@ function renderTags() {
     });
 }
 
-/**
- * Filter entries by tag
- */
 function filterByTag(tag) {
     activeTag = tag;
     renderTags();
-    handleSearch(); // Re-apply search with new tag
+    handleSearch();
 }
 
-/**
- * Handle search and tag filtering
- */
 function handleSearch() {
     const query = searchInput.value.toLowerCase();
-    
     const filtered = allEntries.filter(entry => {
         const matchesQuery = entry.title.toLowerCase().includes(query) || 
                              entry.description.toLowerCase().includes(query) ||
                              (entry.tags && entry.tags.some(t => t.toLowerCase().includes(query)));
-        
         const matchesTag = activeTag === 'All' || (entry.tags && entry.tags.includes(activeTag));
-        
         return matchesQuery && matchesTag;
     });
-
     renderCards(filtered);
 }
 
-/**
- * Render cards to the grid
- */
 function renderCards(entries) {
     cardGrid.innerHTML = '';
-    
-    if (entries.length === 0) {
-        showState('empty');
-        return;
-    }
-
+    if (entries.length === 0) { showState('empty'); return; }
     showState('grid');
     entries.forEach(entry => {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <img src="${entry.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${entry.title}" class="card-image" onerror="this.src='https://via.placeholder.com/400x200?text=Error+Loading+Image'">
+            <img src="${entry.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${entry.title}" class="card-image">
             <div class="card-body">
                 <h3 class="card-title">${entry.title}</h3>
                 <p class="card-description">${entry.description}</p>
@@ -159,20 +121,15 @@ function renderCards(entries) {
     });
 }
 
-/**
- * Helper to switch between UI states
- */
 function showState(state) {
     loadingState.classList.add('hidden');
     errorState.classList.add('hidden');
     emptyState.classList.add('hidden');
     cardGrid.classList.add('hidden');
-
     if (state === 'loading') loadingState.classList.remove('hidden');
     else if (state === 'error') errorState.classList.remove('hidden');
     else if (state === 'empty') emptyState.classList.remove('hidden');
     else if (state === 'grid') cardGrid.classList.remove('hidden');
 }
 
-// Start the app
 document.addEventListener('DOMContentLoaded', init);
