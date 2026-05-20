@@ -3,7 +3,7 @@
  */
 
 // --- CONFIGURATION ---
-const ADMIN_PASSWORD = "ADMIN_PASSWORD_PLACEHOLDER"; // Change this!
+const ADMIN_PASSWORD = "raven00$A"; // پاسوۆردەکە بە سەرکەوتوویی گۆڕدرا بۆ ئەمە
 
 // --- STATE MANAGEMENT ---
 let allEntries = [];
@@ -249,6 +249,7 @@ function handleSearch() {
     renderEntries(filtered);
 }
 
+// --- CONFIRM DELETE ---
 function showConfirmDelete(id) {
     deleteId = id;
     confirmOverlay.classList.remove('hidden');
