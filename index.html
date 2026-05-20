@@ -6,8 +6,51 @@
     <title>ContentHub | Discover Amazing Content</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* كود النافذة المنبثقة للفيديو */
+        #videoModal {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            z-index: 10000; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .modal-container {
+            width: 80%;
+            max-width: 900px;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            background: #ff4757;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+        }
+        #videoFrame {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: none;
+        }
+    </style>
 </head>
 <body>
+
+    <div id="videoModal">
+        <div class="modal-container">
+            <button class="close-modal" onclick="closeVideo()">إغلاق</button>
+            <iframe id="videoFrame" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
     <header>
         <div class="container">
             <div class="logo">
@@ -30,8 +73,7 @@
                     <input type="text" id="search-input" placeholder="Search by title, description or tags...">
                 </div>
                 <div id="tag-filters" class="tag-chips">
-                    <!-- Tags will be dynamically inserted here -->
-                </div>
+                    </div>
             </div>
         </section>
 
@@ -51,18 +93,24 @@
                     <p>No results found for your search.</p>
                 </div>
                 <div id="card-grid" class="grid">
-                    <!-- Cards will be dynamically inserted here -->
-                </div>
+                    </div>
             </div>
         </section>
     </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 ContentHub. Built with <i class="fas fa-heart"></i> and GitHub.</p>
+            <p>&copy; 2026 ContentHub. Built with <i class="fas fa-heart"></i></p>
         </div>
     </footer>
 
     <script src="app.js"></script>
+    <script>
+        // دالة إغلاق الفيديو
+        function closeVideo() {
+            document.getElementById('videoModal').style.display = 'none';
+            document.getElementById('videoFrame').src = "";
+        }
+    </script>
 </body>
 </html>
