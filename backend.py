@@ -3,7 +3,7 @@ import json
 import uuid
 import requests
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -104,7 +104,7 @@ def get_storage_stats(preloaded_files=None):
     storage_info = []
     total_entries = 0
     added_today = 0
-    today = datetime.utcnow().date().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     
     for item in preloaded_files:
         content = item['content']
@@ -132,7 +132,7 @@ def get_storage_stats(preloaded_files=None):
 def health():
     return jsonify({
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "config_ok": all([GITHUB_TOKEN, GITHUB_USER, GITHUB_REPO, API_SECRET])
     }), 200
 
@@ -173,24 +173,25 @@ def create_entry():
         "id": str(uuid.uuid4()),
         "title": data.get('title'),
         "description": data.get('description'),
+        "comments": data.get('comments', ''),
         "image": data.get('image', ''),
         "link": data.get('link', ''),
         "tags": [tag.strip() for tag in data.get('tags', '').split(',') if tag.strip()] if isinstance(data.get('tags'), str) else data.get('tags', []),
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
     }
 
     files = get_all_data_files()
     if not files:
         target_file = 'data1.json'
-        content = {"meta": {"file": target_file, "created": datetime.utcnow().isoformat()}, "entries": []}
+        content = {"meta": {"file": target_file, "created": datetime.now(timezone.utc).isoformat()}, "entries": []}
         sha = None
         size = 0
     else:
         target_file = files[-1]
         content, sha, size = get_file_content(target_file)
         if not content:
-            content = {"meta": {"file": target_file, "created": datetime.utcnow().isoformat()}, "entries": []}
+            content = {"meta": {"file": target_file, "created": datetime.now(timezone.utc).isoformat()}, "entries": []}
             sha = None
             size = 0
 
@@ -199,13 +200,13 @@ def create_entry():
         new_file_num = len(files) + 1
         target_file = f"data{new_file_num}.json"
         content = {
-            "meta": {"file": target_file, "created": datetime.utcnow().isoformat(), "entry_count": 0},
+            "meta": {"file": target_file, "created": datetime.now(timezone.utc).isoformat(), "entry_count": 0},
             "entries": []
         }
         sha = None
 
     content['entries'].append(new_entry)
-    content['meta']['last_updated'] = datetime.utcnow().isoformat()
+    content['meta']['last_updated'] = datetime.now(timezone.utc).isoformat()
     content['meta']['entry_count'] = len(content['entries'])
     
     resp = save_file_content(target_file, content, sha, message=f"Add entry: {new_entry['title']}")
@@ -235,16 +236,17 @@ def update_entry(id):
                 entry.update({
                     "title": data.get('title', entry['title']),
                     "description": data.get('description', entry['description']),
+                    "comments": data.get('comments', entry.get('comments', '')),
                     "image": data.get('image', entry['image']),
                     "link": data.get('link', entry['link']),
                     "tags": [tag.strip() for tag in data.get('tags', '').split(',') if tag.strip()] if isinstance(data.get('tags'), str) else data.get('tags', entry['tags']),
-                    "updated_at": datetime.utcnow().isoformat()
+                    "updated_at": datetime.now(timezone.utc).isoformat()
                 })
                 found = True
                 break
 
         if found:
-            content['meta']['last_updated'] = datetime.utcnow().isoformat()
+            content['meta']['last_updated'] = datetime.now(timezone.utc).isoformat()
             save_file_content(f, content, sha, message=f"Update entry: {id}")
             return jsonify({
                 "entry": next(e for e in content['entries'] if e['id'] == id),
@@ -267,7 +269,7 @@ def delete_entry(id):
         content['entries'] = [e for e in content['entries'] if e['id'] != id]
         
         if len(content['entries']) < initial_count:
-            content['meta']['last_updated'] = datetime.utcnow().isoformat()
+            content['meta']['last_updated'] = datetime.now(timezone.utc).isoformat()
             content['meta']['entry_count'] = len(content['entries'])
             save_file_content(f, content, sha, message=f"Delete entry: {id}")
             return jsonify({

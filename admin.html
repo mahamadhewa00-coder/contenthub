@@ -25,6 +25,7 @@
             <div class="container">
                 <div class="logo"><span class="accent">Content</span>Hub Admin</div>
                 <div class="header-actions">
+                    <button id="settings-toggle-btn"><i class="fas fa-cog"></i> Settings</button>
                     <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </div>
@@ -82,7 +83,7 @@
             <i class="fas fa-rocket"></i> Save & Update Site
         </button>
 
-        <!-- Slide-up Drawer Form -->
+        <!-- Entry Form Drawer -->
         <div id="form-overlay" class="overlay hidden"></div>
         <div id="entry-drawer" class="drawer hidden">
             <div class="drawer-header">
@@ -100,6 +101,10 @@
                     <textarea id="form-description" required rows="3" placeholder="Describe this content..."></textarea>
                 </div>
                 <div class="form-group">
+                    <label>Comments / Private Notes</label>
+                    <textarea id="form-comments" rows="2" placeholder="Your private notes or comments..."></textarea>
+                </div>
+                <div class="form-group">
                     <label>Image URL</label>
                     <input type="url" id="form-image" placeholder="https://...">
                     <div id="image-preview" class="image-preview hidden">
@@ -114,20 +119,35 @@
                     <label>Tags (comma separated)</label>
                     <input type="text" id="form-tags" placeholder="tech, free, design">
                 </div>
-                <div class="config-divider">Configuration</div>
-                <div class="form-group">
-                    <label>Backend API URL</label>
-                    <input type="url" id="form-api-url" placeholder="https://your-api.render.com">
-                </div>
-                <div class="form-group">
-                    <label>API Secret Key</label>
-                    <input type="password" id="form-api-key" placeholder="Enter your secret key">
-                </div>
                 <div class="form-actions">
                     <button type="submit" id="save-entry-btn" class="primary-btn">Save Entry</button>
                     <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
                 </div>
             </form>
+        </div>
+
+        <!-- Settings Drawer -->
+        <div id="settings-drawer" class="drawer hidden">
+            <div class="drawer-header">
+                <h2>API Configuration</h2>
+                <button id="close-settings" class="close-btn">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Backend API URL</label>
+                <input type="url" id="form-api-url" placeholder="https://your-api.render.com">
+                <p class="help-text">Your Render service URL (e.g., https://contenthub-backend.onrender.com)</p>
+            </div>
+            <div class="form-group">
+                <label>API Secret Key</label>
+                <input type="password" id="form-api-key" placeholder="Enter your secret key">
+                <p class="help-text">The API_SECRET you set in Render environment variables</p>
+            </div>
+            <div class="form-actions">
+                <button id="test-connection-btn" class="secondary-btn" style="background: var(--blue); color: white;">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+                <button id="save-settings-btn" class="primary-btn">Save Settings</button>
+            </div>
         </div>
 
         <!-- Toast Notifications -->

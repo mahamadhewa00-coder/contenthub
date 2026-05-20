@@ -8,7 +8,7 @@ const CONFIG = {
     API_URL: "", // Optional: e.g. "https://your-api.render.com"
     // الرابط المباشر للملف (Fallback)
     get dataUrl() {
-        return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}/data1.json`;
+        return `data1.json`;
     }
 };
 
@@ -39,19 +39,25 @@ async function fetchData() {
     showState('loading');
     try {
         let response;
-        // If API_URL is provided, use it to get all entries (including partitioned ones)
-        if (CONFIG.API_URL) {
-            response = await fetch(`${CONFIG.API_URL}/api/entries`);
-            if (response.ok) {
-                const data = await response.json();
-                allEntries = data.entries || [];
+        // Fetch directly from GitHub Raw URL (Works for public repos)
+        // If repo is private, you MUST use the Backend API approach or GitHub Pages will fail to fetch raw.
+        // We add a timestamp to bypass GitHub Cache
+        response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
+
+        if (!response.ok) {
+            // If raw fetch fails, try API_URL if it exists
+            if (CONFIG.API_URL) {
+                response = await fetch(`${CONFIG.API_URL}/api/entries`);
+                if (response.ok) {
+                    const data = await response.json();
+                    allEntries = data.entries || [];
+                } else {
+                    throw new Error("API call failed");
+                }
             } else {
-                throw new Error("API call failed");
+                throw new Error("Network error - Could not fetch data from GitHub.");
             }
         } else {
-            // Fallback to raw GitHub data (only data1.json)
-            response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
-            if (!response.ok) throw new Error("Network error");
             const data = await response.json();
             allEntries = Array.isArray(data) ? data : (data.entries || []);
         }
@@ -116,6 +122,7 @@ function renderCards(entries) {
             <div class="card-body">
                 <h3 class="card-title">${entry.title}</h3>
                 <p class="card-description">${entry.description}</p>
+                ${entry.comments ? `<p class="card-comments"><strong>Note:</strong> ${entry.comments}</p>` : ''}
                 <div class="card-tags">
                     ${(entry.tags || []).map(tag => `<span class="card-tag">${tag}</span>`).join('')}
                 </div>

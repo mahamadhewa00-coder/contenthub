@@ -3,7 +3,7 @@
  */
 
 // --- CONFIGURATION ---
-const ADMIN_PASSWORD = "raven00$A"; // پاسوۆردەکە بە سەرکەوتوویی گۆڕدرا بۆ ئەمە
+const ADMIN_PASSWORD = "raven00$A";
 
 // --- STATE MANAGEMENT ---
 let allEntries = [];
@@ -31,6 +31,12 @@ const entryForm = document.getElementById('entry-form');
 const closeDrawerBtn = document.getElementById('close-drawer');
 const cancelBtn = document.getElementById('cancel-btn');
 
+const settingsDrawer = document.getElementById('settings-drawer');
+const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+const closeSettingsBtn = document.getElementById('close-settings');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+const testConnectionBtn = document.getElementById('test-connection-btn');
+
 const confirmOverlay = document.getElementById('confirm-overlay');
 const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
@@ -51,8 +57,13 @@ function init() {
     addBtn.onclick = () => openDrawer();
     closeDrawerBtn.onclick = closeDrawer;
     cancelBtn.onclick = closeDrawer;
-    drawerOverlay.onclick = closeDrawer;
+    drawerOverlay.onclick = () => { closeDrawer(); closeSettings(); };
     
+    settingsToggleBtn.onclick = openSettings;
+    closeSettingsBtn.onclick = closeSettings;
+    saveSettingsBtn.onclick = saveSettings;
+    testConnectionBtn.onclick = testConnection;
+
     searchInput.oninput = handleSearch;
     stickySaveBtn.onclick = () => showToast("Site is automatically updated on every save! 🚀");
 
@@ -75,9 +86,9 @@ function init() {
     // Form Submit
     entryForm.onsubmit = handleFormSubmit;
 
-    // Load API Config from Session
-    document.getElementById('form-api-url').value = sessionStorage.getItem('apiUrl') || '';
-    document.getElementById('form-api-key').value = sessionStorage.getItem('apiKey') || '';
+    // Load API Config from LocalStorage
+    document.getElementById('form-api-url').value = localStorage.getItem('apiUrl') || '';
+    document.getElementById('form-api-key').value = localStorage.getItem('apiKey') || '';
 }
 
 // --- AUTHENTICATION ---
@@ -101,20 +112,56 @@ function showAdminPanel() {
     loadData();
 }
 
-// --- DATA FETCHING ---
-async function apiRequest(endpoint, method = 'GET', body = null) {
+// --- SETTINGS MANAGEMENT ---
+function openSettings() {
+    settingsDrawer.classList.remove('hidden');
+    drawerOverlay.classList.remove('hidden');
+}
+
+function closeSettings() {
+    settingsDrawer.classList.add('hidden');
+    drawerOverlay.classList.add('hidden');
+}
+
+function saveSettings() {
     const apiUrl = document.getElementById('form-api-url').value;
     const apiKey = document.getElementById('form-api-key').value;
 
+    localStorage.setItem('apiUrl', apiUrl);
+    localStorage.setItem('apiKey', apiKey);
+
+    showToast("Settings saved successfully");
+    closeSettings();
+    loadData();
+}
+
+async function testConnection() {
+    const originalText = testConnectionBtn.innerHTML;
+    testConnectionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+    testConnectionBtn.disabled = true;
+
+    const data = await apiRequest('/api/health');
+
+    testConnectionBtn.innerHTML = originalText;
+    testConnectionBtn.disabled = false;
+
+    if (data && data.status === 'healthy') {
+        showToast("Connection Successful! API is healthy.", "success");
+    } else {
+        showToast("Connection Failed. Check your URL and Key.", "error");
+    }
+}
+
+// --- DATA FETCHING ---
+async function apiRequest(endpoint, method = 'GET', body = null) {
+    const apiUrl = localStorage.getItem('apiUrl');
+    const apiKey = localStorage.getItem('apiKey');
+
     if (!apiUrl || !apiKey) {
-        showToast("Please set API URL and Secret Key in the configuration section below.", "error");
-        openDrawer();
+        showToast("Please set API URL and Secret Key in Settings.", "error");
+        openSettings();
         return null;
     }
-
-    // Save to session for persistence
-    sessionStorage.setItem('apiUrl', apiUrl);
-    sessionStorage.setItem('apiKey', apiKey);
 
     const headers = {
         'Content-Type': 'application/json',
@@ -192,6 +239,7 @@ function openDrawer(id = null) {
         if (entry) {
             document.getElementById('form-title').value = entry.title;
             document.getElementById('form-description').value = entry.description;
+            document.getElementById('form-comments').value = entry.comments || '';
             document.getElementById('form-image').value = entry.image;
             document.getElementById('form-link').value = entry.link;
             document.getElementById('form-tags').value = (entry.tags || []).join(', ');
@@ -216,9 +264,15 @@ function closeDrawer() {
 async function handleFormSubmit(e) {
     e.preventDefault();
     
+    const saveBtn = document.getElementById('save-entry-btn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
+
     const entryData = {
         title: document.getElementById('form-title').value,
         description: document.getElementById('form-description').value,
+        comments: document.getElementById('form-comments').value,
         image: document.getElementById('form-image').value,
         link: document.getElementById('form-link').value,
         tags: document.getElementById('form-tags').value
@@ -230,6 +284,9 @@ async function handleFormSubmit(e) {
     } else {
         result = await apiRequest('/api/entries', 'POST', entryData);
     }
+
+    saveBtn.innerHTML = originalText;
+    saveBtn.disabled = false;
 
     if (result) {
         showToast(currentEntryId ? "Entry updated successfully" : "Entry added successfully", "success");
@@ -266,14 +323,18 @@ async function deleteEntry() {
 
 // --- UTILS ---
 function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
         <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
         <span>${message}</span>
     `;
-    document.getElementById('toast-container').appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 // Start Admin

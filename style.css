@@ -193,8 +193,17 @@ nav a:hover {
 .card-description {
     color: var(--text-secondary);
     font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+.card-comments {
+    background: #0f172a;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--accent);
     margin-bottom: 15px;
-    flex-grow: 1;
+    border-left: 3px solid var(--accent);
 }
 
 .card-tags {
