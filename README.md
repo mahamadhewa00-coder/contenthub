@@ -35,16 +35,50 @@ A complete full-stack web application for content curation, now with a **100% Fr
 
 ---
 
-## ⚙️ How to Update Your Site
+## 🤖 Advanced Option: Telegram Bot + Database (Real-time)
 
-To add new information to your site for free:
-1. Run the professional manager:
-   ```bash
-   python content_manager.py
+If you want to update your site directly from Telegram without using GitHub for storage:
+
+### Step 1: Supabase Setup (Free Database)
+1. Go to [Supabase](https://supabase.com/) and create a free project.
+2. In the **SQL Editor**, run this command to create your table:
+   ```sql
+   create table entries (
+     id uuid default uuid_generate_v4() primary key,
+     title text not null,
+     description text,
+     comments text,
+     image text,
+     link text,
+     tags text[],
+     created_at timestamp with time zone default now()
+   );
    ```
-2. Follow the prompts to enter Title, Description, and **Comments**.
-3. The script will automatically push the update to GitHub.
-4. Refresh your website – the new content will appear instantly! 🚀
+3. Get your **Project URL** and **Anon Key** from Settings -> API.
+
+### Step 2: Telegram Bot Setup
+1. Message [@BotFather](https://t.me/botfather) on Telegram.
+2. Use `/newbot` and follow instructions to get your **Bot Token**.
+
+### Step 3: Configure and Run
+1. In your `.env` file, add:
+   ```env
+   TELEGRAM_TOKEN=your_bot_token
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_KEY=your_supabase_anon_key
+   ```
+2. Run the bot: `python telegram_admin.py`
+3. In the website **Admin Panel** -> Settings, paste your Supabase URL and Key.
+4. Now, simply send `/add Title | Description | Link` to your bot!
+
+---
+
+## ⚙️ How to Update Your Site (GitHub Method)
+
+If you prefer the GitHub method:
+1. Run: `python content_manager.py`
+2. Enter the details as prompted.
+3. Refresh your website – the new content will appear! 🚀
 
 ---
 

@@ -6,6 +6,9 @@ const CONFIG = {
     GITHUB_REPO: "contenthub-data",
     GITHUB_BRANCH: "main",
     API_URL: "", // Optional: e.g. "https://your-api.render.com"
+    SUPABASE_URL: localStorage.getItem('supabase_url') || "",
+    SUPABASE_KEY: localStorage.getItem('supabase_key') || "",
+    USE_SUPABASE: !!localStorage.getItem('supabase_url'),
     // الرابط المباشر للملف (Fallback)
     get dataUrl() {
         return `data1.json`;
@@ -38,38 +41,66 @@ async function init() {
 async function fetchData() {
     showState('loading');
     try {
-        let response;
-        // Fetch directly from GitHub Raw URL (Works for public repos)
-        // If repo is private, you MUST use the Backend API approach or GitHub Pages will fail to fetch raw.
-        // We add a timestamp to bypass GitHub Cache
-        response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
+        if (CONFIG.USE_SUPABASE) {
+            await fetchFromSupabase();
+            return;
+        }
+
+        // Default: Fetch from local data1.json
+        const response = await fetch(`${CONFIG.dataUrl}?t=${Date.now()}`);
 
         if (!response.ok) {
             // If raw fetch fails, try API_URL if it exists
             if (CONFIG.API_URL) {
-                response = await fetch(`${CONFIG.API_URL}/api/entries`);
-                if (response.ok) {
-                    const data = await response.json();
+                const apiResponse = await fetch(`${CONFIG.API_URL}/api/entries`);
+                if (apiResponse.ok) {
+                    const data = await apiResponse.json();
                     allEntries = data.entries || [];
                 } else {
                     throw new Error("API call failed");
                 }
             } else {
-                throw new Error("Network error - Could not fetch data from GitHub.");
+                throw new Error("Network error - Could not fetch data.");
             }
         } else {
             const data = await response.json();
             allEntries = Array.isArray(data) ? data : (data.entries || []);
         }
-        
-        if (allEntries.length === 0) {
-            showState('empty');
-        } else {
-            showState('grid');
-        }
+
+        finalizeFetch();
     } catch (e) {
         console.error(e);
         showState('error');
+    }
+}
+
+async function fetchFromSupabase() {
+    try {
+        const response = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/entries?select=*&order=created_at.desc`, {
+            headers: {
+                "apikey": CONFIG.SUPABASE_KEY,
+                "Authorization": `Bearer ${CONFIG.SUPABASE_KEY}`
+            }
+        });
+        if (response.ok) {
+            allEntries = await response.json();
+            finalizeFetch();
+        } else {
+            throw new Error("Supabase fetch failed");
+        }
+    } catch (e) {
+        console.error("Supabase Error:", e);
+        // Fallback to local if Supabase fails
+        CONFIG.USE_SUPABASE = false;
+        fetchData();
+    }
+}
+
+function finalizeFetch() {
+    if (allEntries.length === 0) {
+        showState('empty');
+    } else {
+        showState('grid');
     }
 }
 

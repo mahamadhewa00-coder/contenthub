@@ -126,9 +126,13 @@ function closeSettings() {
 function saveSettings() {
     const apiUrl = document.getElementById('form-api-url').value;
     const apiKey = document.getElementById('form-api-key').value;
+    const supabaseUrl = document.getElementById('supabase-url').value;
+    const supabaseKey = document.getElementById('supabase-key').value;
 
     localStorage.setItem('apiUrl', apiUrl);
     localStorage.setItem('apiKey', apiKey);
+    localStorage.setItem('supabase_url', supabaseUrl);
+    localStorage.setItem('supabase_key', supabaseKey);
 
     showToast("Settings saved successfully");
     closeSettings();
@@ -156,6 +160,10 @@ async function testConnection() {
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const apiUrl = localStorage.getItem('apiUrl');
     const apiKey = localStorage.getItem('apiKey');
+    const supabaseUrlInput = document.getElementById('supabase-url');
+    const supabaseKeyInput = document.getElementById('supabase-key');
+    if(supabaseUrlInput) supabaseUrlInput.value = localStorage.getItem('supabase_url') || '';
+    if(supabaseKeyInput) supabaseKeyInput.value = localStorage.getItem('supabase_key') || '';
 
     if (!apiUrl || !apiKey) {
         showToast("Please set API URL and Secret Key in Settings.", "error");

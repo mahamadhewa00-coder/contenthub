@@ -142,6 +142,15 @@
                 <input type="password" id="form-api-key" placeholder="Enter your secret key">
                 <p class="help-text">The API_SECRET you set in Render environment variables</p>
             </div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #444;">
+            <div class="form-group">
+                <label>Supabase URL (for Bot Integration)</label>
+                <input type="url" id="supabase-url" placeholder="https://xxx.supabase.co">
+            </div>
+            <div class="form-group">
+                <label>Supabase Anon Key</label>
+                <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiI...">
+            </div>
             <div class="form-actions">
                 <button id="test-connection-btn" class="secondary-btn" style="background: var(--blue); color: white;">
                     <i class="fas fa-plug"></i> Test Connection
