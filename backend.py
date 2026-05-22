@@ -144,6 +144,12 @@ def create_entry():
         "image": data.get('image', ''),
         "link": data.get('link', ''),
         "tags": [tag.strip() for tag in data.get('tags', '').split(',') if tag.strip()] if isinstance(data.get('tags'), str) else data.get('tags', []),
+        "rating": data.get('rating', 0),
+        "year": data.get('year', ''),
+        "emoji": data.get('emoji', '🎬'),
+        "bg": data.get('bg', ''),
+        "episodes": data.get('episodes', 0),
+        "seasons": data.get('seasons', 0),
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat()
     }
@@ -205,6 +211,12 @@ def update_entry(id):
                     "image": data.get('image', entry['image']),
                     "link": data.get('link', entry['link']),
                     "tags": [tag.strip() for tag in data.get('tags', '').split(',') if tag.strip()] if isinstance(data.get('tags'), str) else data.get('tags', entry['tags']),
+                    "rating": data.get('rating', entry.get('rating', 0)),
+                    "year": data.get('year', entry.get('year', '')),
+                    "emoji": data.get('emoji', entry.get('emoji', '🎬')),
+                    "bg": data.get('bg', entry.get('bg', '')),
+                    "episodes": data.get('episodes', entry.get('episodes', 0)),
+                    "seasons": data.get('seasons', entry.get('seasons', 0)),
                     "updated_at": datetime.utcnow().isoformat()
                 })
                 content['meta']['last_updated'] = datetime.utcnow().isoformat()
