@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CineNight — Movie Night</title>
+<title>ComicNight — Comic Library</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -18,13 +18,13 @@
 <!-- HEADER -->
 <header>
   <div class="logo">
-    <div class="logo-icon">🎬</div>
-    <span>CineNight</span>
+    <div class="logo-icon">📖</div>
+    <span>ComicNight</span>
   </div>
   <nav>
     <a href="index.html" class="nav-link active">Home</a>
-    <a href="#" class="nav-link">Movies</a>
-    <a href="#" class="nav-link">Series</a>
+    <a href="#" class="nav-link">Comics</a>
+    <a href="#" class="nav-link">Manga</a>
     <a href="admin.html" class="nav-link">Admin</a>
   </nav>
   <div class="header-right">
@@ -37,10 +37,10 @@
 
   <!-- SEARCH -->
   <div class="search-wrap">
-    <div class="search-label">🔍 Find a Movie</div>
+    <div class="search-label">🔍 Find a Comic</div>
     <div class="search-box">
-      <span class="search-icon">🎥</span>
-      <input type="text" id="searchInput" placeholder="Search movies, series, genres…">
+      <span class="search-icon">📖</span>
+      <input type="text" id="searchInput" placeholder="Search comics, manga, authors…">
     </div>
     <div class="search-results" id="searchResults"></div>
   </div>
@@ -48,10 +48,10 @@
   <!-- HERO -->
   <div class="hero">
     <div class="hero-info">
-      <div class="badge">🌙 Movie Night</div>
-      <h2>Join us for a fantastic <span class="hl">movie night</span></h2>
-      <p>Filled with popcorn, laughter, and great company! Whether you're a fan of thrilling action, heartwarming dramas, or side-splitting comedies — we've got it all.</p>
-      <button class="join-btn">Join Now →</button>
+      <div class="badge">🗯️ New Releases</div>
+      <h2>Discover your next <span class="hl">comic adventure</span></h2>
+      <p>Explore a vast collection of graphic novels, manga, and epic superhero sagas. From indie gems to mainstream legends — your next favorite story starts here.</p>
+      <button class="join-btn">Start Reading →</button>
     </div>
 
     <div class="hero-cards">
@@ -69,7 +69,7 @@
           <button class="arr-btn" id="prevBtn">←</button>
           <button class="arr-btn" id="nextBtn">→</button>
         </div>
-        <div class="swipe-hint">Swipe or drag to change card</div>
+        <div class="swipe-hint">Swipe or drag to change title</div>
       </div>
     </div>
   </div>
@@ -100,8 +100,8 @@
       <div class="modal-desc" id="modalDesc"></div>
       <div class="modal-meta" id="modalMeta"></div>
       <div class="modal-cta">
-        <button class="btn-primary" id="modalWatchBtn">▶ Watch Trailer</button>
-        <button class="btn-secondary">＋ Watchlist</button>
+        <button class="btn-primary" id="modalWatchBtn">📖 Read Online</button>
+        <button class="btn-secondary">＋ Library</button>
       </div>
     </div>
   </div>

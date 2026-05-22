@@ -18,25 +18,25 @@ const CONFIG = {
     }
 };
 
-let movies = [];
+let entries = [];
 let currentIdx = 0;
 let isDragging = false, dragStartX = 0, dragDelta = 0;
 let autoTimer;
 
 // ── Initialize ──
 async function init() {
-    await loadMovies();
-    if (movies.length > 0) {
+    await loadEntries();
+    if (entries.length > 0) {
         buildStack();
         buildTrending();
         startAutoRotate();
     } else {
-        document.getElementById('stackContainer').innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--muted);">No movies found. Add some in the Admin panel!</div>';
+        document.getElementById('stackContainer').innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--muted);">No comics found. Add some in the Admin panel!</div>';
     }
     setupSearch();
 }
 
-async function loadMovies() {
+async function loadEntries() {
     try {
         let data;
         // Try to fetch from Backend API first if configured
@@ -58,10 +58,10 @@ async function loadMovies() {
         }
 
         if (data) {
-            movies = data.map(m => ({
+            entries = data.map(m => ({
                 id: m.id,
                 title: m.title,
-                emoji: m.emoji || "🎬",
+                emoji: m.emoji || "📖",
                 rating: m.rating || 0,
                 year: m.year || "",
                 genre: Array.isArray(m.tags) ? m.tags : (m.tags ? m.tags.split(',').map(t => t.trim()) : []),
@@ -74,7 +74,7 @@ async function loadMovies() {
             }));
         }
     } catch (e) {
-        console.error("Error loading movies:", e);
+        console.error("Error loading entries:", e);
     }
 }
 
@@ -85,10 +85,10 @@ function buildStack() {
     container.innerHTML = '';
 
     // Show up to 3 cards
-    const layers = Math.min(3, movies.length);
+    const layers = Math.min(3, entries.length);
     for (let layer = layers - 1; layer >= 0; layer--) {
-        const mIdx = (currentIdx + layer) % movies.length;
-        const m = movies[mIdx];
+        const mIdx = (currentIdx + layer) % entries.length;
+        const m = entries[mIdx];
         const card = document.createElement('div');
         card.className = 'movie-card card-pos-' + layer;
         card.dataset.idx = mIdx;
@@ -117,7 +117,7 @@ function buildDots() {
     const d = document.getElementById('pagDots');
     if (!d) return;
     d.innerHTML = '';
-    movies.forEach((_, i) => {
+    entries.forEach((_, i) => {
         const dot = document.createElement('div');
         dot.className = 'pag-dot' + (i === currentIdx ? ' active' : '');
         dot.addEventListener('click', () => { currentIdx = i; buildStack(); resetAutoRotate(); });
@@ -127,13 +127,13 @@ function buildDots() {
 
 // ── Navigation ──
 function goNext() {
-    if (movies.length === 0) return;
-    currentIdx = (currentIdx + 1) % movies.length;
+    if (entries.length === 0) return;
+    currentIdx = (currentIdx + 1) % entries.length;
     buildStack();
 }
 function goPrev() {
-    if (movies.length === 0) return;
-    currentIdx = (currentIdx - 1 + movies.length) % movies.length;
+    if (entries.length === 0) return;
+    currentIdx = (currentIdx - 1 + entries.length) % entries.length;
     buildStack();
 }
 
@@ -179,7 +179,7 @@ function resetAutoRotate() {
 
 // ── Modal ──
 function openModal(idx) {
-    const m = movies[idx];
+    const m = entries[idx];
     const modalBg = document.getElementById('modalBg');
     if (m.image) {
         modalBg.style.backgroundImage = `url(${m.image})`;
@@ -196,8 +196,8 @@ function openModal(idx) {
     document.getElementById('modalTags').innerHTML = m.genre.map(g => `<span class="tag">${g}</span>`).join('') + (m.year ? `<span class="tag">📅 ${m.year}</span>` : '');
     document.getElementById('modalMeta').innerHTML = `
         <div class="meta-item"><div class="meta-val" style="color:#fbbf24">⭐ ${m.rating}</div><div class="meta-lbl">Rating</div></div>
-        <div class="meta-item"><div class="meta-val">${m.seasons || 0}</div><div class="meta-lbl">Seasons</div></div>
-        <div class="meta-item"><div class="meta-val">${m.episodes || 0}</div><div class="meta-lbl">Episodes</div></div>
+        <div class="meta-item"><div class="meta-val">${m.seasons || 0}</div><div class="meta-lbl">Volumes</div></div>
+        <div class="meta-item"><div class="meta-val">${m.episodes || 0}</div><div class="meta-lbl">Chapters</div></div>
         <div class="meta-item"><div class="meta-val">${m.year || 'N/A'}</div><div class="meta-lbl">Year</div></div>
     `;
 
@@ -224,11 +224,11 @@ document.getElementById('modalOverlay')?.addEventListener('click', e => {
 function buildTrending() {
     const grid = document.getElementById('trendingGrid');
     if (!grid) return;
-    const sorted = [...movies].sort((a, b) => b.rating - a.rating).slice(0, 8);
+    const sorted = [...entries].sort((a, b) => b.rating - a.rating).slice(0, 8);
     grid.innerHTML = sorted.map((m, i) => {
         const posterStyle = m.image ? `background-image: url(${m.image}); background-size: cover; background-position: center;` : `background: ${m.bg};`;
         return `
-            <div class="trending-card" onclick="openModal(${movies.indexOf(m)})">
+            <div class="trending-card" onclick="openModal(${entries.indexOf(m)})">
                 <div class="tc-poster" style="${posterStyle}">
                     <div class="tc-overlay"></div>
                     <span class="tc-num">#${i + 1}</span>
@@ -253,7 +253,7 @@ function setupSearch() {
         const q = searchInput.value.trim().toLowerCase();
         if (!q) { searchResults.style.display = 'none'; return; }
 
-        const matches = movies.filter(m =>
+        const matches = entries.filter(m =>
             m.title.toLowerCase().includes(q) ||
             m.genre.some(g => g.toLowerCase().includes(q)) ||
             m.desc.toLowerCase().includes(q)
@@ -267,7 +267,7 @@ function setupSearch() {
 
         searchResults.style.display = 'block';
         searchResults.innerHTML = matches.map(m => `
-            <div class="search-result-item" onclick="selectSearch(${movies.indexOf(m)})">
+            <div class="search-result-item" onclick="selectSearch(${entries.indexOf(m)})">
                 <div class="sr-poster" style="background:${m.bg}">${m.emoji}</div>
                 <div class="sr-info">
                     <div class="sr-title">${m.title}</div>
