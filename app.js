@@ -26,9 +26,36 @@ async function init() {
 
 async function loadEntries() {
     try {
+        // Check maintenance & announcement
+        const { data: sData } = await _supabase.from('settings').select('*').single();
+        if (sData) {
+            if (sData.maintenance_mode) {
+                document.getElementById('maintenance-overlay').style.display = 'flex';
+                return;
+            }
+            if (sData.announcement) {
+                document.getElementById('announcement-bar').style.display = 'block';
+                document.getElementById('announcement-text').textContent = sData.announcement;
+            }
+            if (sData.video_ad_url) {
+                const pBtn = document.getElementById('promo-btn');
+                pBtn.style.display = 'flex';
+                pBtn.onclick = () => {
+                    const modal = document.getElementById('modalOverlay');
+                    document.getElementById('modalTitle').textContent = "Featured Promo";
+                    document.getElementById('modalDesc').innerHTML = `<video src="${sData.video_ad_url}" controls autoplay style="width:100%; border-radius:15px"></video>`;
+                    document.getElementById('modalTags').innerHTML = "";
+                    document.getElementById('modalMeta').innerHTML = "";
+                    document.getElementById('modalBg').style.background = "var(--accent)";
+                    modal.classList.add('open');
+                };
+            }
+        }
+
         const { data, error } = await _supabase
             .from('comics')
             .select('*')
+            .eq('is_active', true)
             .order('created_at', { ascending: false });
 
         if (error) throw error;

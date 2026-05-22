@@ -74,6 +74,7 @@ function init() {
     confirmDeleteBtn.onclick = deleteEntry;
 
     entryForm.onsubmit = handleFormSubmit;
+    document.getElementById('save-settings-btn').onclick = updateSettings;
 
     // Load SB Config from Session
     document.getElementById('form-sb-url').value = sessionStorage.getItem('sbUrl') || '';
@@ -120,6 +121,7 @@ async function loadData() {
     if (!supabase) initSupabase();
     if (!supabase) return;
 
+    // Load Entries
     const { data, error } = await supabase
         .from('comics')
         .select('*')
@@ -131,6 +133,31 @@ async function loadData() {
         allEntries = data;
         renderEntries(allEntries);
     }
+
+    // Load Settings
+    const { data: sData, error: sError } = await supabase
+        .from('settings')
+        .select('*')
+        .single();
+
+    if (sData) {
+        document.getElementById('setting-maintenance').checked = sData.maintenance_mode;
+        document.getElementById('setting-announcement').value = sData.announcement || '';
+        document.getElementById('setting-video').value = sData.video_ad_url || '';
+    }
+}
+
+async function updateSettings() {
+    const isMaintenance = document.getElementById('setting-maintenance').checked;
+    const announcement = document.getElementById('setting-announcement').value;
+    const videoAd = document.getElementById('setting-video').value;
+
+    const { error } = await supabase
+        .from('settings')
+        .upsert({ id: 1, maintenance_mode: isMaintenance, announcement: announcement, video_ad_url: videoAd });
+
+    if (error) showToast(error.message, "error");
+    else showToast("Settings updated!", "success");
 }
 
 // --- UI RENDERING ---
@@ -244,7 +271,8 @@ async function handleFormSubmit(e) {
         emoji: document.getElementById('form-emoji').value,
         bg: document.getElementById('form-bg').value,
         episodes: parseInt(document.getElementById('form-episodes').value) || 0,
-        seasons: parseInt(document.getElementById('form-seasons').value) || 0
+        seasons: parseInt(document.getElementById('form-seasons').value) || 0,
+        is_active: document.getElementById('form-active').checked
     };
 
     let error;

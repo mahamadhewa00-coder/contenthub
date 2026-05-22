@@ -16,6 +16,19 @@
   <div class="blob b3"></div>
 </div>
 
+<!-- MAINTENANCE OVERLAY -->
+<div id="maintenance-overlay" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:10000; align-items:center; justify-content:center; text-align:center; padding:20px;">
+    <div>
+        <h1 style="font-family:'Syne'; font-size:48px; margin-bottom:20px;">🛠️ Under Maintenance</h1>
+        <p style="color:var(--muted); font-size:18px;">We're currently updating the library. Please check back soon!</p>
+    </div>
+</div>
+
+<!-- ANNOUNCEMENT BAR -->
+<div id="announcement-bar" style="display:none; background:linear-gradient(90deg, var(--accent), var(--accent2)); color:white; padding:8px; text-align:center; font-size:13px; font-weight:600; position:relative; z-index:100;">
+    <span id="announcement-text"></span>
+</div>
+
 <!-- HEADER -->
 <header>
   <div class="logo">
@@ -52,7 +65,10 @@
       <div class="badge">🗯️ New Releases</div>
       <h2>Discover your next <span class="hl">comic adventure</span></h2>
       <p>Explore a vast collection of graphic novels, manga, and epic superhero sagas. From indie gems to mainstream legends — your next favorite story starts here.</p>
-      <button class="join-btn">Start Reading →</button>
+      <div style="display:flex; gap:10px;">
+        <button class="join-btn">Start Reading →</button>
+        <button id="promo-btn" class="join-btn" style="background:rgba(255,255,255,0.1); display:none;">📺 Watch Promo</button>
+      </div>
     </div>
 
     <div class="hero-cards">

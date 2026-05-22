@@ -1,80 +1,65 @@
-# ContentHub 🚀
+# ComicNight 📖 — Full-Stack Comic Library
 
-A complete full-stack web application for content curation.
+A modern, serverless comic and manga library built with a high-fidelity interactive UI and Supabase integration.
 
-## Architecture
-- **Frontend & Admin**: Pure HTML/CSS/JS (GitHub Pages)
-- **Backend**: Python Flask API (Render.com)
-- **Database**: GitHub repository with partitioned JSON files
+## 🚀 Deployment Guide (100% Free)
 
----
+### 1. Database Setup (Supabase)
+1. Sign up at [Supabase](https://supabase.com/).
+2. Create a new project.
+3. **SQL Setup:** Go to the SQL Editor and run:
+   ```sql
+   create table comics (
+     id uuid default uuid_generate_v4() primary key,
+     title text not null,
+     description text,
+     cover_url text,
+     link text,
+     tags text[],
+     rating float8,
+     year int4,
+     emoji text,
+     bg text,
+     episodes int4,
+     seasons int4,
+     is_active boolean default true,
+     created_at timestamp with time zone default now()
+   );
 
-## 🛠️ Step-by-Step Deployment Guide (100% Free)
+   create table settings (
+     id int primary key default 1,
+     maintenance_mode boolean default false,
+     announcement text,
+     video_ad_url text,
+     updated_at timestamp with time zone default now()
+   );
 
-### Step 1: GitHub for Data (The Database)
-1. Create a **Private** repository named `contenthub-data`.
-2. Upload the `data1.json` file from this project to the repository.
-3. Generate a **GitHub Personal Access Token (classic)**:
-   - Go to Settings -> Developer Settings -> Personal access tokens -> Tokens (classic).
-   - Generate a new token with `repo` scope. **Save this token!**
+   insert into settings (id, maintenance_mode, announcement) values (1, false, 'Welcome to ComicNight!');
+   ```
+4. **Storage Setup:** Go to "Storage", create a bucket named `comic-covers`, and set it to **Public**.
 
-### Step 2: GitHub for Code
-1. Create a **Public** repository named `contenthub`.
-2. Upload all other files (`index.html`, `style.css`, `app.js`, `admin.html`, `admin.css`, `admin.js`, `backend.py`, `requirements.txt`, `render.yaml`).
+### 2. Connect Your App
+1. Get your **Project URL** and **Anon Key** from Supabase Settings -> API.
+2. Open `app.js` and paste them into the `SUPABASE_URL` and `SUPABASE_KEY` variables.
 
-### Step 3: Enable GitHub Pages
-1. In your `contenthub` code repository, go to **Settings -> Pages**.
-2. Under **Build and deployment**, select **Branch: main** and folder **/(root)**.
-3. Click **Save**. Your site will be at `https://<your-username>.github.io/contenthub/`.
+### 3. Hosting on Netlify (No GitHub link!)
+If you don't want to use GitHub and want a clean link:
+1. Put all your project files into one folder on your computer.
+2. Go to [Netlify Drop](https://app.netlify.com/drop).
+3. Drag and drop your folder.
+4. Netlify will give you a random link like `https://shiny-comic-123.netlify.app`.
+5. You can change this name in "Site Settings" to something like `https://comicnight-v1.netlify.app`.
 
-### Step 4: Render.com for Backend
-1. Sign up/Login to [Render.com](https://render.com) using your GitHub account.
-2. Click **New +** and select **Web Service**.
-3. Connect your `contenthub` code repository.
-4. Render will automatically detect `render.yaml`.
-5. Add the following **Environment Variables**:
-   - `GITHUB_TOKEN`: Your GitHub token from Step 1.
-   - `GITHUB_USER`: Your GitHub username.
-   - `GITHUB_REPO`: `contenthub-data`.
-   - `API_SECRET`: A secure password of your choice for the API.
-6. Once deployed, copy your Render service URL (e.g., `https://contenthub-backend.onrender.com`).
+### 4. Admin Panel
+- Access your dashboard at: `your-netlify-link.com/admin.html`
+- Login Password: `raven00$A`
+- **First Time:** When adding your first book, enter your Supabase URL/Key in the settings at the bottom of the admin form.
 
----
-
-## ⚙️ Connecting Everything
-
-### 1. Update Public Site (`app.js`)
-Edit the `CONFIG` block at the top of `app.js`:
-```javascript
-const CONFIG = {
-    GITHUB_USER: "your-username",
-    GITHUB_REPO: "contenthub-data",
-    GITHUB_BRANCH: "main",
-    // ...
-};
-```
-
-### 2. Configure Admin Panel (`admin.js`)
-Edit the `ADMIN_PASSWORD` constant at the top of `admin.js`:
-```javascript
-const ADMIN_PASSWORD = "your-secure-admin-password";
-```
-
-### 3. Connect Admin to API
-1. Open your live admin panel: `https://<your-username>.github.io/contenthub/admin.html`.
-2. Login with your `ADMIN_PASSWORD`.
-3. In the **Configuration** section at the bottom of the drawer:
-   - **Backend API URL**: Paste your Render URL.
-   - **API Secret Key**: Paste your `API_SECRET`.
-4. Click **Save Entry** (even if empty) to save these settings to your browser.
-
----
-
-## 📦 Features
-- **Auto-partitioning**: Backend creates `data2.json`, `data3.json`, etc., when files exceed 90KB.
-- **Mobile First**: Admin panel works perfectly on phones.
-- **Search & Filter**: Instant search and tag filtering on the public site.
-- **Storage Status**: Live indicator of JSON file size and capacity.
+## ✨ Features
+- **Dynamic UI:** Draggable card stack for featured content.
+- **Maintenance Mode:** Toggle from admin to show a "Work in Progress" screen.
+- **Image Uploads:** Upload covers directly to Supabase from the browser.
+- **Promo System:** Display a video trailer or ad via the admin settings.
 
 ## 📄 License
 MIT
