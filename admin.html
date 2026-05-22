@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentHub Admin | Manage Content</title>
+    <title>ComicNight Admin | Manage Content</title>
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,7 +11,7 @@
     <!-- Login Gate -->
     <div id="login-gate">
         <div class="login-card">
-            <div class="logo"><span class="accent">Content</span>Hub Admin</div>
+            <div class="logo"><span class="accent">Comic</span>Night Admin</div>
             <p>Please enter the administrator password</p>
             <input type="password" id="admin-password" placeholder="Password">
             <button id="login-btn">Login</button>
@@ -23,7 +23,7 @@
     <div id="admin-panel" class="hidden">
         <header>
             <div class="container">
-                <div class="logo"><span class="accent">Content</span>Hub Admin</div>
+                <div class="logo"><span class="accent">Comic</span>Night Admin</div>
                 <div class="header-actions">
                     <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
@@ -113,6 +113,36 @@
                 <div class="form-group">
                     <label>Tags (comma separated)</label>
                     <input type="text" id="form-tags" placeholder="tech, free, design">
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <input type="number" id="form-rating" step="0.1" placeholder="8.7">
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <input type="number" id="form-year" placeholder="2023">
+                    </div>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <input type="text" id="form-emoji" placeholder="🎬">
+                    </div>
+                    <div class="form-group">
+                        <label>Background (CSS Gradient)</label>
+                        <input type="text" id="form-bg" placeholder="linear-gradient(...)">
+                    </div>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Chapters</label>
+                        <input type="number" id="form-episodes" placeholder="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Volumes</label>
+                        <input type="number" id="form-seasons" placeholder="1">
+                    </div>
                 </div>
                 <div class="config-divider">Configuration</div>
                 <div class="form-group">

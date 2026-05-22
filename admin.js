@@ -195,6 +195,12 @@ function openDrawer(id = null) {
             document.getElementById('form-image').value = entry.image;
             document.getElementById('form-link').value = entry.link;
             document.getElementById('form-tags').value = (entry.tags || []).join(', ');
+            document.getElementById('form-rating').value = entry.rating || '';
+            document.getElementById('form-year').value = entry.year || '';
+            document.getElementById('form-emoji').value = entry.emoji || '';
+            document.getElementById('form-bg').value = entry.bg || '';
+            document.getElementById('form-episodes').value = entry.episodes || '';
+            document.getElementById('form-seasons').value = entry.seasons || '';
             
             // Trigger preview
             document.getElementById('form-image').oninput({ target: { value: entry.image } });
@@ -221,7 +227,13 @@ async function handleFormSubmit(e) {
         description: document.getElementById('form-description').value,
         image: document.getElementById('form-image').value,
         link: document.getElementById('form-link').value,
-        tags: document.getElementById('form-tags').value
+        tags: document.getElementById('form-tags').value,
+        rating: parseFloat(document.getElementById('form-rating').value) || 0,
+        year: parseInt(document.getElementById('form-year').value) || null,
+        emoji: document.getElementById('form-emoji').value,
+        bg: document.getElementById('form-bg').value,
+        episodes: parseInt(document.getElementById('form-episodes').value) || 0,
+        seasons: parseInt(document.getElementById('form-seasons').value) || 0
     };
 
     let result;
