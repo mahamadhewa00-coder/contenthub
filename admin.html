@@ -6,6 +6,7 @@
     <title>ComicNight Admin | Manage Content</title>
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Login Gate -->
@@ -100,8 +101,9 @@
                     <textarea id="form-description" required rows="3" placeholder="Describe this content..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" id="form-image" placeholder="https://...">
+                    <label>Cover Image (Upload)</label>
+                    <input type="file" id="form-file-input" accept="image/*">
+                    <input type="hidden" id="form-image">
                     <div id="image-preview" class="image-preview hidden">
                         <img id="preview-img" src="" alt="Preview">
                     </div>
@@ -144,14 +146,14 @@
                         <input type="number" id="form-seasons" placeholder="1">
                     </div>
                 </div>
-                <div class="config-divider">Configuration</div>
+                <div class="config-divider">Supabase Configuration</div>
                 <div class="form-group">
-                    <label>Backend API URL</label>
-                    <input type="url" id="form-api-url" placeholder="https://your-api.render.com">
+                    <label>Supabase URL</label>
+                    <input type="url" id="form-sb-url" placeholder="https://xyz.supabase.co">
                 </div>
                 <div class="form-group">
-                    <label>API Secret Key</label>
-                    <input type="password" id="form-api-key" placeholder="Enter your secret key">
+                    <label>Supabase Anon Key</label>
+                    <input type="password" id="form-sb-key" placeholder="Enter anon key">
                 </div>
                 <div class="form-actions">
                     <button type="submit" id="save-entry-btn" class="primary-btn">Save Entry</button>

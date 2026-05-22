@@ -1,13 +1,15 @@
 /**
- * ContentHub Admin Panel Logic
+ * ContentHub Admin Panel Logic - Supabase Integrated
  */
 
 // --- CONFIGURATION ---
-const ADMIN_PASSWORD = "raven00$A"; // پاسوۆردەکە بە سەرکەوتوویی گۆڕدرا بۆ ئەمە
+const ADMIN_PASSWORD = "raven00$A";
+
+// Supabase Init (will be re-initialized from session if available)
+let supabase = null;
 
 // --- STATE MANAGEMENT ---
 let allEntries = [];
-let storageData = null;
 let currentEntryId = null;
 let deleteId = null;
 
@@ -37,16 +39,13 @@ const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
 // --- INITIALIZATION ---
 function init() {
-    // Check if already logged in
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
         showAdminPanel();
     }
 
-    // Login Event
     loginBtn.onclick = handleLogin;
     passwordInput.onkeypress = (e) => e.key === 'Enter' && handleLogin();
 
-    // UI Events
     logoutBtn.onclick = handleLogout;
     addBtn.onclick = () => openDrawer();
     closeDrawerBtn.onclick = closeDrawer;
@@ -54,30 +53,45 @@ function init() {
     drawerOverlay.onclick = closeDrawer;
     
     searchInput.oninput = handleSearch;
-    stickySaveBtn.onclick = () => showToast("Site is automatically updated on every save! 🚀");
+    stickySaveBtn.onclick = () => showToast("Changes are live on Supabase! 🚀");
 
-    // Form Image Preview
-    document.getElementById('form-image').oninput = (e) => {
+    // File input preview
+    document.getElementById('form-file-input').onchange = (e) => {
+        const file = e.target.files[0];
         const preview = document.getElementById('image-preview');
         const img = document.getElementById('preview-img');
-        if (e.target.value) {
-            img.src = e.target.value;
-            preview.classList.remove('hidden');
-        } else {
-            preview.classList.add('hidden');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
         }
     };
 
-    // Delete Events
     cancelDeleteBtn.onclick = () => confirmOverlay.classList.add('hidden');
     confirmDeleteBtn.onclick = deleteEntry;
 
-    // Form Submit
     entryForm.onsubmit = handleFormSubmit;
 
-    // Load API Config from Session
-    document.getElementById('form-api-url').value = sessionStorage.getItem('apiUrl') || '';
-    document.getElementById('form-api-key').value = sessionStorage.getItem('apiKey') || '';
+    // Load SB Config from Session
+    document.getElementById('form-sb-url').value = sessionStorage.getItem('sbUrl') || '';
+    document.getElementById('form-sb-key').value = sessionStorage.getItem('sbKey') || '';
+
+    if (sessionStorage.getItem('sbUrl') && sessionStorage.getItem('sbKey')) {
+        initSupabase();
+    }
+}
+
+function initSupabase() {
+    const url = document.getElementById('form-sb-url').value;
+    const key = document.getElementById('form-sb-key').value;
+    if (url && key) {
+        supabase = window.supabase.createClient(url, key);
+        sessionStorage.setItem('sbUrl', url);
+        sessionStorage.setItem('sbKey', key);
+    }
 }
 
 // --- AUTHENTICATION ---
@@ -102,47 +116,19 @@ function showAdminPanel() {
 }
 
 // --- DATA FETCHING ---
-async function apiRequest(endpoint, method = 'GET', body = null) {
-    const apiUrl = document.getElementById('form-api-url').value;
-    const apiKey = document.getElementById('form-api-key').value;
-
-    if (!apiUrl || !apiKey) {
-        showToast("Please set API URL and Secret Key in the configuration section below.", "error");
-        openDrawer();
-        return null;
-    }
-
-    // Save to session for persistence
-    sessionStorage.setItem('apiUrl', apiUrl);
-    sessionStorage.setItem('apiKey', apiKey);
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
-    };
-
-    try {
-        const response = await fetch(`${apiUrl}${endpoint}`, {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : null
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'API Request failed');
-        
-        if (data.storage) updateStorageUI(data.storage);
-        return data;
-    } catch (error) {
-        showToast(error.message, "error");
-        return null;
-    }
-}
-
 async function loadData() {
-    const data = await apiRequest('/api/entries');
-    if (data) {
-        allEntries = data.entries;
+    if (!supabase) initSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+        .from('comics')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        showToast(error.message, "error");
+    } else {
+        allEntries = data;
         renderEntries(allEntries);
     }
 }
@@ -153,8 +139,9 @@ function renderEntries(entries) {
     entries.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'entry-card';
+        const imgUrl = entry.cover_url || entry.image || 'https://via.placeholder.com/60';
         div.innerHTML = `
-            <img src="${entry.image || 'https://via.placeholder.com/60'}" class="entry-img" onerror="this.src='https://via.placeholder.com/60'">
+            <img src="${imgUrl}" class="entry-img" onerror="this.src='https://via.placeholder.com/60'">
             <div class="entry-info">
                 <h4>${entry.title}</h4>
                 <p>${entry.description}</p>
@@ -168,20 +155,6 @@ function renderEntries(entries) {
     });
 }
 
-function updateStorageUI(stats) {
-    document.getElementById('stat-total').textContent = stats.total_entries;
-    document.getElementById('stat-today').textContent = stats.added_today;
-    document.getElementById('stat-files').textContent = stats.total_files;
-
-    if (stats.files && stats.files.length > 0) {
-        const activeFile = stats.files[stats.files.length - 1];
-        document.getElementById('storage-filename').textContent = activeFile.file;
-        document.getElementById('storage-progress').style.width = `${activeFile.percentage}%`;
-        document.getElementById('storage-usage').textContent = `${(activeFile.size / 1024).toFixed(2)} KB / ${(stats.max_file_bytes / 1024).toFixed(0)} KB`;
-        document.getElementById('storage-percentage').textContent = `${activeFile.percentage}% used`;
-    }
-}
-
 // --- FORM HANDLING ---
 function openDrawer(id = null) {
     currentEntryId = id;
@@ -192,8 +165,8 @@ function openDrawer(id = null) {
         if (entry) {
             document.getElementById('form-title').value = entry.title;
             document.getElementById('form-description').value = entry.description;
-            document.getElementById('form-image').value = entry.image;
-            document.getElementById('form-link').value = entry.link;
+            document.getElementById('form-image').value = entry.cover_url || entry.image || '';
+            document.getElementById('form-link').value = entry.link || '';
             document.getElementById('form-tags').value = (entry.tags || []).join(', ');
             document.getElementById('form-rating').value = entry.rating || '';
             document.getElementById('form-year').value = entry.year || '';
@@ -202,12 +175,19 @@ function openDrawer(id = null) {
             document.getElementById('form-episodes').value = entry.episodes || '';
             document.getElementById('form-seasons').value = entry.seasons || '';
             
-            // Trigger preview
-            document.getElementById('form-image').oninput({ target: { value: entry.image } });
+            const imgPreview = document.getElementById('image-preview');
+            const img = document.getElementById('preview-img');
+            if (entry.cover_url || entry.image) {
+                img.src = entry.cover_url || entry.image;
+                imgPreview.classList.remove('hidden');
+            } else {
+                imgPreview.classList.add('hidden');
+            }
         }
     } else {
         entryForm.reset();
         document.getElementById('image-preview').classList.add('hidden');
+        document.getElementById('form-file-input').value = "";
     }
 
     drawer.classList.remove('hidden');
@@ -221,13 +201,44 @@ function closeDrawer() {
 
 async function handleFormSubmit(e) {
     e.preventDefault();
-    
+    if (!supabase) initSupabase();
+    if (!supabase) {
+        showToast("Please configure Supabase settings.", "error");
+        return;
+    }
+
+    const fileInput = document.getElementById('form-file-input');
+    const file = fileInput.files[0];
+    let coverUrl = document.getElementById('form-image').value;
+
+    if (file) {
+        showToast("Uploading image...", "info");
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('comic-covers')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            showToast("Upload failed: " + uploadError.message, "error");
+            return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('comic-covers')
+            .getPublicUrl(filePath);
+
+        coverUrl = publicUrl;
+    }
+
     const entryData = {
         title: document.getElementById('form-title').value,
         description: document.getElementById('form-description').value,
-        image: document.getElementById('form-image').value,
+        cover_url: coverUrl,
         link: document.getElementById('form-link').value,
-        tags: document.getElementById('form-tags').value,
+        tags: document.getElementById('form-tags').value.split(',').map(t => t.trim()).filter(t => t),
         rating: parseFloat(document.getElementById('form-rating').value) || 0,
         year: parseInt(document.getElementById('form-year').value) || null,
         emoji: document.getElementById('form-emoji').value,
@@ -236,18 +247,26 @@ async function handleFormSubmit(e) {
         seasons: parseInt(document.getElementById('form-seasons').value) || 0
     };
 
-    let result;
+    let error;
     if (currentEntryId) {
-        result = await apiRequest(`/api/entries/${currentEntryId}`, 'PUT', entryData);
+        const { error: updateError } = await supabase
+            .from('comics')
+            .update(entryData)
+            .eq('id', currentEntryId);
+        error = updateError;
     } else {
-        result = await apiRequest('/api/entries', 'POST', entryData);
+        const { error: insertError } = await supabase
+            .from('comics')
+            .insert([entryData]);
+        error = insertError;
     }
 
-    if (result) {
+    if (error) {
+        showToast(error.message, "error");
+    } else {
         showToast(currentEntryId ? "Entry updated successfully" : "Entry added successfully", "success");
         closeDrawer();
         loadData();
-        stickySaveBtn.classList.remove('hidden');
     }
 }
 
@@ -268,8 +287,14 @@ function showConfirmDelete(id) {
 }
 
 async function deleteEntry() {
-    const result = await apiRequest(`/api/entries/${deleteId}`, 'DELETE');
-    if (result) {
+    const { error } = await supabase
+        .from('comics')
+        .delete()
+        .eq('id', deleteId);
+
+    if (error) {
+        showToast(error.message, "error");
+    } else {
         showToast("Entry deleted", "success");
         confirmOverlay.classList.add('hidden');
         loadData();
@@ -278,15 +303,16 @@ async function deleteEntry() {
 
 // --- UTILS ---
 function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
         <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
         <span>${message}</span>
     `;
-    document.getElementById('toast-container').appendChild(toast);
+    container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Start Admin
 init();

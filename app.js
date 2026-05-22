@@ -1,22 +1,10 @@
 /**
- * CineNight Frontend Logic
- * Fetches data from the backend API
+ * ComicNight Frontend Logic - Supabase Integrated
  */
 
-const CONFIG = {
-    // These should ideally be set in a way that doesn't require editing app.js
-    // For now, we'll try to get them from localStorage or use defaults
-    API_URL: localStorage.getItem('apiUrl') || '',
-    // Usually the public site might fetch from a public endpoint or directly from GitHub
-    // But since the original app.js used GITHUB_USER/REPO, we will maintain that fallback
-    GITHUB_USER: "mahamadhewa00-coder",
-    GITHUB_REPO: "contenthub-data",
-    GITHUB_BRANCH: "main",
-    DATA_FILE: "data1.json",
-    get rawBaseUrl() {
-        return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}`;
-    }
-};
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let entries = [];
 let currentIdx = 0;
@@ -38,24 +26,12 @@ async function init() {
 
 async function loadEntries() {
     try {
-        let data;
-        // Try to fetch from Backend API first if configured
-        if (CONFIG.API_URL) {
-            const resp = await fetch(`${CONFIG.API_URL}/api/entries`);
-            if (resp.ok) {
-                const json = await resp.json();
-                data = json.entries;
-            }
-        }
+        const { data, error } = await _supabase
+            .from('comics')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        // Fallback to GitHub raw JSON
-        if (!data) {
-            const resp = await fetch(`${CONFIG.rawBaseUrl}/${CONFIG.DATA_FILE}?t=${Date.now()}`);
-            if (resp.ok) {
-                const json = await resp.json();
-                data = Array.isArray(json) ? json : (json.entries || []);
-            }
-        }
+        if (error) throw error;
 
         if (data) {
             entries = data.map(m => ({
@@ -67,14 +43,14 @@ async function loadEntries() {
                 genre: Array.isArray(m.tags) ? m.tags : (m.tags ? m.tags.split(',').map(t => t.trim()) : []),
                 desc: m.description,
                 bg: m.bg || "linear-gradient(160deg, #1a1030 0%, #0f1a30 100%)",
-                image: m.image,
+                image: m.cover_url || m.image,
                 link: m.link,
                 episodes: m.episodes || 0,
                 seasons: m.seasons || 0
             }));
         }
     } catch (e) {
-        console.error("Error loading entries:", e);
+        console.error("Error loading entries from Supabase:", e);
     }
 }
 
@@ -84,7 +60,6 @@ function buildStack() {
     if (!container) return;
     container.innerHTML = '';
 
-    // Show up to 3 cards
     const layers = Math.min(3, entries.length);
     for (let layer = layers - 1; layer >= 0; layer--) {
         const mIdx = (currentIdx + layer) % entries.length;
