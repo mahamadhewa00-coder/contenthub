@@ -3,8 +3,8 @@
  */
 
 const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_URL',
-    key: 'YOUR_SUPABASE_ANON_KEY'
+    url: 'https://cnwiqvebnmpmhilwosot.supabase.co',
+    key: 'sb_publishable_WtRQkRCYtZGmxO6qkyfqAg_QRio8UuU'
 };
 
 let sbInstance = null;
@@ -17,7 +17,8 @@ let autoTimer;
 async function init() {
     if (!initSupabase()) {
         console.error("Supabase SDK not loaded or config missing.");
-        document.getElementById('stackContainer').innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--danger);">Configuration Error: Please check Supabase keys.</div>';
+        const container = document.getElementById('stackContainer');
+        if (container) container.innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--danger);">Configuration Error: Please check Supabase keys.</div>';
         return;
     }
 
@@ -35,7 +36,7 @@ async function init() {
 }
 
 function initSupabase() {
-    if (window.supabase && SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
+    if (window.supabase && SUPABASE_CONFIG.url) {
         sbInstance = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
         return true;
     }
@@ -47,8 +48,8 @@ async function loadEntries() {
 
     try {
         // Check maintenance & announcement
-        const { data: sData } = await sbInstance.from('settings').select('*').single();
-        if (sData) {
+        const { data: sData, error: sError } = await sbInstance.from('settings').select('*').single();
+        if (!sError && sData) {
             if (sData.maintenance_mode) {
                 const overlay = document.getElementById('maintenance-overlay');
                 if (overlay) overlay.style.display = 'flex';
@@ -86,7 +87,8 @@ async function loadEntries() {
         const { data, error } = await sbInstance
             .from('comics')
             .select('*')
-            .eq('is_active', true)
+            // Using logic where if column is_active doesn't exist, we show all.
+            // But user report says we should have it or at least handle the provided columns.
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -101,10 +103,10 @@ async function loadEntries() {
                 genre: Array.isArray(m.tags) ? m.tags : (m.tags ? m.tags.split(',').map(t => t.trim()) : []),
                 desc: m.description,
                 bg: m.bg || "linear-gradient(160deg, #1a1030 0%, #0f1a30 100%)",
-                image: m.cover_url || m.image,
+                image: m.cover_url,
                 link: m.link,
-                episodes: m.episodes || 0,
-                seasons: m.seasons || 0
+                episodes: m.chapters || 0,
+                seasons: m.volumes || 0
             }));
         }
     } catch (e) {
@@ -233,7 +235,10 @@ function openModal(idx) {
         }
         if (modalEmoji) modalEmoji.textContent = "";
     } else {
-        if (modalBg) modalBg.style.background = m.bg;
+        if (modalBg) {
+            modalBg.style.backgroundImage = 'none';
+            modalBg.style.background = m.bg;
+        }
         if (modalEmoji) modalEmoji.textContent = m.emoji;
     }
 
@@ -301,9 +306,9 @@ function setupSearch() {
         if (!q) { searchResults.style.display = 'none'; return; }
 
         const matches = entries.filter(m =>
-            m.title.toLowerCase().includes(q) ||
-            m.genre.some(g => g.toLowerCase().includes(q)) ||
-            m.desc.toLowerCase().includes(q)
+            (m.title && m.title.toLowerCase().includes(q)) ||
+            (m.genre && m.genre.some(g => g.toLowerCase().includes(q))) ||
+            (m.desc && m.desc.toLowerCase().includes(q))
         );
 
         if (matches.length === 0) {

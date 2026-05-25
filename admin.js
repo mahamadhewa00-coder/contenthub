@@ -4,6 +4,11 @@
 
 // --- CONFIGURATION ---
 const ADMIN_PASSWORD = "raven00$A";
+const CONFIG = {
+    SUPABASE_URL: "https://cnwiqvebnmpmhilwosot.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_WtRQkRCYtZGmxO6qkyfqAg_QRio8UuU"
+};
+
 let sbClient = null;
 
 // --- STATE MANAGEMENT ---
@@ -53,8 +58,8 @@ const elements = {
     formYear: document.getElementById('form-year'),
     formEmoji: document.getElementById('form-emoji'),
     formBg: document.getElementById('form-bg'),
-    formEpisodes: document.getElementById('form-episodes'),
-    formSeasons: document.getElementById('form-seasons'),
+    formEpisodes: document.getElementById('form-episodes'), // Mapped to chapters
+    formSeasons: document.getElementById('form-seasons'),   // Mapped to volumes
     formActive: document.getElementById('form-active'),
 
     // Config
@@ -68,15 +73,13 @@ const elements = {
     // Stats
     statTotal: document.getElementById('stat-total'),
     statToday: document.getElementById('stat-today'),
-    statFiles: document.getElementById('stat-files'),
-    storageFilename: document.getElementById('storage-filename'),
-    storageProgress: document.getElementById('storage-progress'),
-    storageUsage: document.getElementById('storage-usage'),
-    storagePercentage: document.getElementById('storage-percentage')
+    statFiles: document.getElementById('stat-files')
 };
 
 // --- INITIALIZATION ---
 function init() {
+    initSupabase();
+
     // Session Check
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
         showAdminPanel();
@@ -125,22 +128,14 @@ function init() {
     if (elements.entryForm) elements.entryForm.addEventListener('submit', handleFormSubmit);
     if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', updateSettings);
 
-    // Load SB Config from Session
-    if (elements.formSbUrl) elements.formSbUrl.value = sessionStorage.getItem('sbUrl') || '';
-    if (elements.formSbKey) elements.formSbKey.value = sessionStorage.getItem('sbKey') || '';
-
-    if (sessionStorage.getItem('sbUrl') && sessionStorage.getItem('sbKey')) {
-        initSupabase();
-    }
+    // Sync Config Display
+    if (elements.formSbUrl) elements.formSbUrl.value = CONFIG.SUPABASE_URL;
+    if (elements.formSbKey) elements.formSbKey.value = CONFIG.SUPABASE_ANON_KEY;
 }
 
 function initSupabase() {
-    const url = elements.formSbUrl ? elements.formSbUrl.value : '';
-    const key = elements.formSbKey ? elements.formSbKey.value : '';
-    if (url && key && window.supabase) {
-        sbClient = window.supabase.createClient(url, key);
-        sessionStorage.setItem('sbUrl', url);
-        sessionStorage.setItem('sbKey', key);
+    if (window.supabase && CONFIG.SUPABASE_URL) {
+        sbClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         return true;
     }
     return false;
@@ -169,7 +164,6 @@ function showAdminPanel() {
 
 // --- DATA FETCHING ---
 async function loadData() {
-    if (!sbClient) initSupabase();
     if (!sbClient) return;
 
     try {
@@ -208,11 +202,10 @@ function updateStats(data) {
     const today = new Date().toISOString().split('T')[0];
     const addedToday = data.filter(e => e.created_at && e.created_at.startsWith(today)).length;
     if (elements.statToday) elements.statToday.textContent = addedToday;
-    if (elements.statFiles) elements.statFiles.textContent = "DB";
+    if (elements.statFiles) elements.statFiles.textContent = "Live";
 }
 
 async function updateSettings() {
-    if (!sbClient) initSupabase();
     if (!sbClient) return showToast("Supabase not initialized", "error");
 
     const isMaintenance = elements.settingMaintenance.checked;
@@ -234,7 +227,7 @@ function renderEntries(entries) {
     entries.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'entry-card';
-        const imgUrl = entry.cover_url || entry.image || 'https://via.placeholder.com/60';
+        const imgUrl = entry.cover_url || 'https://via.placeholder.com/60';
         div.innerHTML = `
             <img src="${imgUrl}" class="entry-img" onerror="this.src='https://via.placeholder.com/60'">
             <div class="entry-info">
@@ -242,12 +235,11 @@ function renderEntries(entries) {
                 <p>${entry.description || ''}</p>
             </div>
             <div class="entry-actions">
-                <button class="edit-btn" title="Edit" data-id="${entry.id}"><i class="fas fa-edit"></i></button>
-                <button class="delete-btn" title="Delete" data-id="${entry.id}"><i class="fas fa-trash"></i></button>
+                <button class="edit-btn" title="Edit"><i class="fas fa-edit"></i></button>
+                <button class="delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
             </div>
         `;
 
-        // Add events to buttons
         div.querySelector('.edit-btn').onclick = () => openDrawer(entry.id);
         div.querySelector('.delete-btn').onclick = () => showConfirmDelete(entry.id);
 
@@ -265,19 +257,19 @@ function openDrawer(id = null) {
         if (entry) {
             if (elements.formTitle) elements.formTitle.value = entry.title || '';
             if (elements.formDesc) elements.formDesc.value = entry.description || '';
-            if (elements.formImageHidden) elements.formImageHidden.value = entry.cover_url || entry.image || '';
+            if (elements.formImageHidden) elements.formImageHidden.value = entry.cover_url || '';
             if (elements.formLink) elements.formLink.value = entry.link || '';
             if (elements.formTags) elements.formTags.value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
             if (elements.formRating) elements.formRating.value = entry.rating || '';
             if (elements.formYear) elements.formYear.value = entry.year || '';
             if (elements.formEmoji) elements.formEmoji.value = entry.emoji || '';
             if (elements.formBg) elements.formBg.value = entry.bg || '';
-            if (elements.formEpisodes) elements.formEpisodes.value = entry.episodes || '';
-            if (elements.formSeasons) elements.formSeasons.value = entry.seasons || '';
+            if (elements.formEpisodes) elements.formEpisodes.value = entry.chapters || '';
+            if (elements.formSeasons) elements.formSeasons.value = entry.volumes || '';
             if (elements.formActive) elements.formActive.checked = entry.is_active !== false;
             
             if (elements.imagePreview && elements.previewImg) {
-                const url = entry.cover_url || entry.image;
+                const url = entry.cover_url;
                 if (url) {
                     elements.previewImg.src = url;
                     elements.imagePreview.classList.remove('hidden');
@@ -304,8 +296,7 @@ function closeDrawer() {
 
 async function handleFormSubmit(e) {
     e.preventDefault();
-    if (!sbClient) initSupabase();
-    if (!sbClient) return showToast("Please configure Supabase settings.", "error");
+    if (!sbClient) return showToast("Supabase not initialized", "error");
 
     const file = elements.formFileInput.files[0];
     let coverUrl = elements.formImageHidden.value;
@@ -314,11 +305,10 @@ async function handleFormSubmit(e) {
         showToast("Uploading image...", "info");
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${fileName}`;
 
         const { data: uploadData, error: uploadError } = await sbClient.storage
             .from('comic-covers')
-            .upload(filePath, file);
+            .upload(fileName, file);
 
         if (uploadError) {
             showToast("Upload failed: " + uploadError.message, "error");
@@ -327,7 +317,7 @@ async function handleFormSubmit(e) {
 
         const { data: { publicUrl } } = sbClient.storage
             .from('comic-covers')
-            .getPublicUrl(filePath);
+            .getPublicUrl(fileName);
 
         coverUrl = publicUrl;
     }
@@ -340,10 +330,10 @@ async function handleFormSubmit(e) {
         tags: elements.formTags.value.split(',').map(t => t.trim()).filter(t => t),
         rating: parseFloat(elements.formRating.value) || 0,
         year: parseInt(elements.formYear.value) || null,
-        emoji: elements.formEmoji.value,
-        bg: elements.formBg.value,
-        episodes: parseInt(elements.formEpisodes.value) || 0,
-        seasons: parseInt(elements.formSeasons.value) || 0,
+        emoji: elements.formEmoji.value || "📖",
+        bg: elements.formBg.value || "#12122c",
+        chapters: parseInt(elements.formEpisodes.value) || 0,
+        volumes: parseInt(elements.formSeasons.value) || 0,
         is_active: elements.formActive.checked
     };
 
