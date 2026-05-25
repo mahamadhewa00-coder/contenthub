@@ -1,15 +1,23 @@
 /**
- * ContentHub Admin Panel Logic
+ * ComicNight Admin Panel Logic
+ * Fully Integrated with Supabase Serverless Database & Storage
  */
 
 // --- CONFIGURATION ---
-const ADMIN_PASSWORD = "raven00$A"; // پاسوۆردەکە بە سەرکەوتوویی گۆڕدرا بۆ ئەمە
+const ADMIN_PASSWORD = "raven00$A"; // هێشتنەوەی پاسوۆردە ئەمنییەکەت وەک خۆی
+
+const SUPABASE_CONFIG = {
+    URL: "https://cnwiqvebnmpmhilwosot.supabase.co",
+    ANON_KEY: "sb_publishable_WtRQkRCYtZGmxO6qkyfqAg_QRio8UuU",
+    BUCKET_NAME: "comic-covers"
+};
+
+// دروستکردنی کلاینیتی Supabase بۆ پەیوەندی ڕاستەوخۆ
+const supabaseClient = supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
 
 // --- STATE MANAGEMENT ---
 let allEntries = [];
-let storageData = null;
 let currentEntryId = null;
-let deleteId = null;
 
 // --- DOM ELEMENTS ---
 const loginGate = document.getElementById('login-gate');
@@ -37,7 +45,6 @@ const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
 // --- INITIALIZATION ---
 function init() {
-    // Check if already logged in
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
         showAdminPanel();
     }
@@ -54,19 +61,23 @@ function init() {
     drawerOverlay.onclick = closeDrawer;
     
     searchInput.oninput = handleSearch;
-    stickySaveBtn.onclick = () => showToast("Site is automatically updated on every save! 🚀");
+    stickySaveBtn.onclick = () => showToast("Site is automatically synchronized with Supabase live database! 🚀");
 
-    // Form Image Preview
-    document.getElementById('form-image').oninput = (e) => {
-        const preview = document.getElementById('image-preview');
-        const img = document.getElementById('preview-img');
-        if (e.target.value) {
-            img.src = e.target.value;
-            preview.classList.remove('hidden');
-        } else {
-            preview.classList.add('hidden');
-        }
-    };
+    // Preview Image when Selected
+    const fileInput = document.getElementById('form-image-file');
+    if (fileInput) {
+        fileInput.onchange = (e) => {
+            const preview = document.getElementById('image-preview');
+            const img = document.getElementById('preview-img');
+            const file = e.target.files[0];
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        };
+    }
 
     // Delete Events
     cancelDeleteBtn.onclick = () => confirmOverlay.classList.add('hidden');
@@ -74,10 +85,6 @@ function init() {
 
     // Form Submit
     entryForm.onsubmit = handleFormSubmit;
-
-    // Load API Config from Session
-    document.getElementById('form-api-url').value = sessionStorage.getItem('apiUrl') || '';
-    document.getElementById('form-api-key').value = sessionStorage.getItem('apiKey') || '';
 }
 
 // --- AUTHENTICATION ---
@@ -101,192 +108,225 @@ function showAdminPanel() {
     loadData();
 }
 
-// --- DATA FETCHING ---
-async function apiRequest(endpoint, method = 'GET', body = null) {
-    const apiUrl = document.getElementById('form-api-url').value;
-    const apiKey = document.getElementById('form-api-key').value;
-
-    if (!apiUrl || !apiKey) {
-        showToast("Please set API URL and Secret Key in the configuration section below.", "error");
-        openDrawer();
-        return null;
-    }
-
-    // Save to session for persistence
-    sessionStorage.setItem('apiUrl', apiUrl);
-    sessionStorage.setItem('apiKey', apiKey);
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
-    };
-
-    try {
-        const response = await fetch(`${apiUrl}${endpoint}`, {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : null
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'API Request failed');
-        
-        if (data.storage) updateStorageUI(data.storage);
-        return data;
-    } catch (error) {
-        showToast(error.message, "error");
-        return null;
-    }
-}
-
+// --- FETCH DATA FROM SUPABASE ---
 async function loadData() {
-    const data = await apiRequest('/api/entries');
-    if (data) {
-        allEntries = data.entries;
+    try {
+        const { data, error } = await supabaseClient
+            .from('comics')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        allEntries = data || [];
         renderEntries(allEntries);
+    } catch (err) {
+        console.error("Error fetching data:", err);
+        showToast("Failed to load data from Supabase", "error");
     }
 }
 
-// --- UI RENDERING ---
+// --- RENDER LIST ---
 function renderEntries(entries) {
+    if (!entryList) return;
     entryList.innerHTML = '';
+
+    if (entries.length === 0) {
+        entryList.innerHTML = `<div class="p-4 text-center text-muted">No comics found.</div>`;
+        return;
+    }
+
     entries.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'entry-card';
-        div.innerHTML = `
-            <img src="${entry.image || 'https://via.placeholder.com/60'}" class="entry-img" onerror="this.src='https://via.placeholder.com/60'">
-            <div class="entry-info">
-                <h4>${entry.title}</h4>
-                <p>${entry.description}</p>
+        const item = document.createElement('div');
+        item.className = 'admin-item'; // هێشتنەوەی دیزاینی شوشەیی خۆت
+        item.innerHTML = `
+            <div class="item-meta">
+                <img src="${entry.cover_url || 'https://via.placeholder.com/40x60'}" class="item-img" style="width:40px; height:55px; object-fit:cover; border-radius:4px;" />
+                <div>
+                    <div class="item-title">${entry.title}</div>
+                    <div class="item-sub">Volumes: ${entry.volumes || 0} · Chapters: ${entry.chapters || 0} · ⭐ ${entry.rating || 0}</div>
+                </div>
             </div>
-            <div class="entry-actions">
-                <button class="edit-btn" onclick="openDrawer('${entry.id}')"><i class="fas fa-edit"></i></button>
-                <button class="delete-btn" onclick="showConfirmDelete('${entry.id}')"><i class="fas fa-trash"></i></button>
+            <div class="item-actions">
+                <button class="btn btn-secondary btn-sm" onclick="openDrawer(${entry.id})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="askDelete(${entry.id})">Delete</button>
             </div>
         `;
-        entryList.appendChild(div);
+        entryList.appendChild(item);
     });
 }
 
-function updateStorageUI(stats) {
-    document.getElementById('stat-total').textContent = stats.total_entries;
-    document.getElementById('stat-today').textContent = stats.added_today;
-    document.getElementById('stat-files').textContent = stats.total_files;
-
-    if (stats.files && stats.files.length > 0) {
-        const activeFile = stats.files[stats.files.length - 1];
-        document.getElementById('storage-filename').textContent = activeFile.file;
-        document.getElementById('storage-progress').style.width = `${activeFile.percentage}%`;
-        document.getElementById('storage-usage').textContent = `${(activeFile.size / 1024).toFixed(2)} KB / ${(stats.max_file_bytes / 1024).toFixed(0)} KB`;
-        document.getElementById('storage-percentage').textContent = `${activeFile.percentage}% used`;
-    }
-}
-
-// --- FORM HANDLING ---
-function openDrawer(id = null) {
-    currentEntryId = id;
-    drawerTitle.textContent = id ? 'Edit Entry' : 'Add New Entry';
-    
-    if (id) {
-        const entry = allEntries.find(e => e.id === id);
-        if (entry) {
-            document.getElementById('form-title').value = entry.title;
-            document.getElementById('form-description').value = entry.description;
-            document.getElementById('form-image').value = entry.image;
-            document.getElementById('form-link').value = entry.link;
-            document.getElementById('form-tags').value = (entry.tags || []).join(', ');
-            document.getElementById('form-rating').value = entry.rating || '';
-            document.getElementById('form-year').value = entry.year || '';
-            document.getElementById('form-emoji').value = entry.emoji || '';
-            document.getElementById('form-bg').value = entry.bg || '';
-            document.getElementById('form-episodes').value = entry.episodes || '';
-            document.getElementById('form-seasons').value = entry.seasons || '';
-            
-            // Trigger preview
-            document.getElementById('form-image').oninput({ target: { value: entry.image } });
-        }
-    } else {
-        entryForm.reset();
-        document.getElementById('image-preview').classList.add('hidden');
-    }
-
-    drawer.classList.remove('hidden');
-    drawerOverlay.classList.remove('hidden');
-}
-
-function closeDrawer() {
-    drawer.classList.add('hidden');
-    drawerOverlay.classList.add('hidden');
-}
-
-async function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    const entryData = {
-        title: document.getElementById('form-title').value,
-        description: document.getElementById('form-description').value,
-        image: document.getElementById('form-image').value,
-        link: document.getElementById('form-link').value,
-        tags: document.getElementById('form-tags').value,
-        rating: parseFloat(document.getElementById('form-rating').value) || 0,
-        year: parseInt(document.getElementById('form-year').value) || null,
-        emoji: document.getElementById('form-emoji').value,
-        bg: document.getElementById('form-bg').value,
-        episodes: parseInt(document.getElementById('form-episodes').value) || 0,
-        seasons: parseInt(document.getElementById('form-seasons').value) || 0
-    };
-
-    let result;
-    if (currentEntryId) {
-        result = await apiRequest(`/api/entries/${currentEntryId}`, 'PUT', entryData);
-    } else {
-        result = await apiRequest('/api/entries', 'POST', entryData);
-    }
-
-    if (result) {
-        showToast(currentEntryId ? "Entry updated successfully" : "Entry added successfully", "success");
-        closeDrawer();
-        loadData();
-        stickySaveBtn.classList.remove('hidden');
-    }
-}
-
-// --- ACTIONS ---
+// --- SEARCH ---
 function handleSearch() {
-    const query = searchInput.value.toLowerCase();
+    const q = searchInput.value.toLowerCase().trim();
+    if (!q) { renderEntries(allEntries); return; }
     const filtered = allEntries.filter(e => 
-        e.title.toLowerCase().includes(query) || 
-        e.description.toLowerCase().includes(query)
+        e.title.toLowerCase().includes(q) || 
+        (e.description && e.description.toLowerCase().includes(q))
     );
     renderEntries(filtered);
 }
 
-// --- CONFIRM DELETE ---
-function showConfirmDelete(id) {
-    deleteId = id;
-    confirmOverlay.classList.remove('hidden');
+// --- DRAWER ACTIONS ---
+window.openDrawer = function(id = null) {
+    currentEntryId = id;
+    entryForm.reset();
+    document.getElementById('image-preview').classList.add('hidden');
+
+    if (id) {
+        drawerTitle.textContent = "Edit Comic";
+        const entry = allEntries.find(e => e.id === id);
+        if (entry) {
+            document.getElementById('form-title').value = entry.title;
+            document.getElementById('form-desc').value = entry.description || '';
+            document.getElementById('form-volumes').value = entry.volumes || 0;
+            document.getElementById('form-chapters').value = entry.chapters || 0;
+            document.getElementById('form-rating').value = entry.rating || 0;
+            document.getElementById('form-link').value = entry.link || '';
+            
+            if (entry.cover_url) {
+                document.getElementById('preview-img').src = entry.cover_url;
+                document.getElementById('image-preview').classList.remove('hidden');
+            }
+        }
+    } else {
+        drawerTitle.textContent = "Add New Comic";
+    }
+    drawer.classList.add('open');
+    drawerOverlay.classList.add('open');
+};
+
+function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+    currentEntryId = null;
 }
 
-async function deleteEntry() {
-    const result = await apiRequest(`/api/entries/${deleteId}`, 'DELETE');
-    if (result) {
-        showToast("Entry deleted", "success");
-        confirmOverlay.classList.add('hidden');
+// --- FORM SUBMIT (INSERT / UPDATE & IMAGE UPLOAD) ---
+async function handleFormSubmit(e) {
+    e.preventDefault();
+
+    const submitBtn = entryForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "⏳ Saving...";
+
+    const title = document.getElementById('form-title').value.trim();
+    const description = document.getElementById('form-desc').value.trim();
+    const volumes = document.getElementById('form-volumes').value.trim();
+    const chapters = document.getElementById('form-chapters').value.trim();
+    const rating = document.getElementById('form-rating').value.trim();
+    const link = document.getElementById('form-link').value.trim();
+    const fileInput = document.getElementById('form-image-file');
+    const file = fileInput ? fileInput.files[0] : null;
+
+    try {
+        let coverUrl = "";
+        
+        // ئەگەر دەستکاری بکەین و وێنەی نوێ دانەنێین، وێنە کۆنەکە دەهێڵێتەوە
+        if (currentEntryId) {
+            const existing = allEntries.find(e => e.id === currentEntryId);
+            if (existing) coverUrl = existing.cover_url;
+        }
+
+        // [یەکەم] ئەگەر وێنەی نوێ هەڵبژێردرابوو، بەرزی دەکاتەوە بۆ سێرڤەری وێنەکان
+        if (file) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+            
+            const { error: uploadError } = await supabaseClient.storage
+                .from(SUPABASE_CONFIG.BUCKET_NAME)
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabaseClient.storage
+                .from(SUPABASE_CONFIG.BUCKET_NAME)
+                .getPublicUrl(fileName);
+
+            coverUrl = urlData.publicUrl;
+        }
+
+        const payload = {
+            title,
+            description,
+            volumes,
+            chapters,
+            rating,
+            link,
+            cover_url: coverUrl
+        };
+
+        if (currentEntryId) {
+            //کرداری ئەپدێکردنەوە
+            const { error } = await supabaseClient
+                .from('comics')
+                .update(payload)
+                .eq('id', currentEntryId);
+            if (error) throw error;
+            showToast("Comic updated successfully! 🎉");
+        } else {
+            //کرداری زیادکردنی نوێ
+            const { error } = await supabaseClient
+                .from('comics')
+                .insert([payload]);
+            if (error) throw error;
+            showToast("New Comic added successfully! 📚");
+        }
+
+        closeDrawer();
         loadData();
+    } catch (err) {
+        console.error("Error saving data:", err);
+        showToast(err.message || "An error occurred while saving.", "error");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Save Entry";
     }
 }
 
-// --- UTILS ---
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
-        <span>${message}</span>
-    `;
-    document.getElementById('toast-container').appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+// --- DELETE LOGIC ---
+window.askDelete = function(id) {
+    deleteId = id;
+    confirmOverlay.classList.remove('hidden');
+};
+
+async function deleteEntry() {
+    if (!deleteId) return;
+    try {
+        const { error } = await supabaseClient
+            .from('comics')
+            .delete()
+            .eq('id', deleteId);
+
+        if (error) throw error;
+
+        showToast("Comic deleted successfully.");
+        confirmOverlay.classList.add('hidden');
+        loadData();
+    } catch (err) {
+        console.error("Error deleting:", err);
+        showToast("Failed to delete entry.", "error");
+    } finally {
+        deleteId = null;
+    }
 }
 
-// Start Admin
-init();
+// --- TOAST NOTIFICATION ---
+function showToast(msg, type = "success") {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '8px';
+    toast.style.zIndex = '99999';
+    toast.style.color = '#fff';
+    toast.style.background = type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+    toast.style.backdropFilter = 'blur(10px)';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+    toast.innerHTML = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
