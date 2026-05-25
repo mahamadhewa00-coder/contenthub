@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComicNight — Premium Digital Comic Archive</title>
+    <title>ComicNight — S-Tier Digital Archive</title>
 
-    <!-- 2026 PERFORMANCE ARCHITECTURE -->
+    <!-- 2026 ARCHITECTURAL OPTIMIZATION -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
     <!-- FAIL-SAFE SDK -->
@@ -16,101 +15,126 @@
 </head>
 <body>
 
-    <!-- HIGH-FIDELITY BACKGROUND -->
+    <!-- ATMOSPHERIC LAYER -->
     <div class="blobs">
         <div class="blob b1"></div>
         <div class="blob b2"></div>
         <div class="blob b3"></div>
     </div>
 
-    <!-- PROACTIVE UI OVERLAYS -->
+    <!-- PROACTIVE UI MODULES -->
     <div id="maintenance-overlay" style="display:none; position:fixed; inset:0; background:var(--bg-main); z-index:10000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem;">
-        <h1 style="font-family:var(--font-display); font-size:clamp(2rem, 5vw, 4rem); margin-bottom:1.5rem;">ARCHIVE OPTIMIZATION</h1>
-        <p style="color:var(--text-muted); font-size:1.1rem; max-width:500px;">We are currently fine-tuning the system for a superior reading experience. Please stand by.</p>
+        <h1 style="font-family:'Syne'; font-size:clamp(2rem, 5vw, 4rem); margin-bottom:1.5rem; letter-spacing:-2px">SYSTEM OPTIMIZATION</h1>
+        <p style="color:var(--text-muted); font-size:1.1rem; max-width:500px;">We are currently fine-tuning the cluster for a superior experience. Return shortly.</p>
     </div>
 
-    <div id="announcement-bar" style="display:none; background:linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); color:white; padding:10px; text-align:center; font-size:0.85rem; font-weight:700; position:relative; z-index:1001;">
+    <div id="announcement-bar" style="display:none; background:linear-gradient(to right, var(--purple-vivid), var(--pink-vivid)); color:white; padding:10px; text-align:center; font-size:0.85rem; font-weight:800; position:relative; z-index:1001; letter-spacing:1px">
         <span id="announcement-text"></span>
     </div>
 
     <!-- S-TIER NAVIGATION -->
     <header>
-        <div class="logo" onclick="location.href='index.html'">
-            <div class="logo-symbol">📖</div>
-            <span>ComicNight</span>
-        </div>
+        <a class="logo" href="index.html">
+            <div class="logo-icon">🌙</div>
+            Comic<span>Night</span>
+        </a>
         <nav>
-            <a href="index.html" class="nav-link active">Home</a>
-            <a href="#" class="nav-link">Archive</a>
-            <a href="admin.html" class="nav-link">Portal</a>
+            <ul>
+                <li><a href="index.html" class="nav-link active">Home</a></li>
+                <li><a href="#" class="nav-link">Comics</a></li>
+                <li><a href="#" class="nav-link">Manga</a></li>
+                <li><a href="admin.html" class="nav-link">Portal</a></li>
+            </ul>
         </nav>
-        <div id="status-badge" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.3); padding:6px 12px; border-radius:20px; border:1px solid var(--glass-border);">
-            <div id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#22c55e;"></div>
-            <span id="status-text" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Archive Live</span>
+        <div style="display:flex; align-items:center; gap:15px">
+            <div id="status-badge" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.3); padding:6px 14px; border-radius:20px; border:1px solid var(--glass-border);">
+                <div id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#22c55e; transition:0.3s"></div>
+                <span id="status-text" style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase">Live</span>
+            </div>
+            <div class="avatar">A</div>
         </div>
     </header>
 
     <main>
-        <!-- MODERN HERO INTERFACE -->
-        <section class="hero-container">
-            <div class="hero-content">
-                <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(124,92,252,0.1); border:1px solid rgba(124,92,252,0.2); color:#a78bfa; padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:1.5rem;">
-                    ✨ New Curations Available
-                </div>
-                <h1>Explore the <br><span>Digital Frontier</span></h1>
-                <p>Access a globally synchronized repository of high-fidelity graphic novels and independent manga. Reimagining the digital reading experience.</p>
-                <div class="cta-group">
-                    <button class="btn-premium btn-primary">Initialize Reader →</button>
-                    <button id="promo-btn" class="btn-premium" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; display:none;">Watch Promo</button>
-                </div>
+        <!-- SMART SEARCH ARCHITECTURE -->
+        <div class="search-container">
+            <div style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; font-weight:800">Archive Query</div>
+            <div class="search-box">
+                <span style="font-size:1.2rem">🔎</span>
+                <input type="text" id="searchInput" placeholder="Search titles, authors, or genres...">
             </div>
+            <div id="searchResults" style="display:none; margin-top:10px; background:var(--surface2); border-radius:12px; border:1px solid var(--glass-border); overflow:hidden; box-shadow:var(--shadow-soft);"></div>
+        </div>
 
-            <div class="stack-portal">
-                <div id="stackContainer">
-                    <!-- S-Tier Cards Initialized by Engine -->
+        <!-- HERO SPECTACLE -->
+        <div class="hero-wrapper">
+            <section class="hero-card-main">
+                <div class="hero-content">
+                    <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(124,92,252,0.1); border:1px solid rgba(124,92,252,0.2); color:#a78bfa; padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:800; text-transform:uppercase; margin-bottom:1.5rem; letter-spacing:1px">
+                        ✨ New Curations Available
+                    </div>
+                    <h1>Discover<br>your next<br><em>comic adventure</em></h1>
+                    <p>Explore high-fidelity graphic novels, manga, and independent sagas. Access a globally synchronized repository of premium stories.</p>
+                    <div style="display:flex; gap:1rem;">
+                        <button class="btn-stier btn-primary">Start Reading →</button>
+                        <button id="promo-btn" class="btn-stier" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; display:none;">Watch Promo</button>
+                    </div>
                 </div>
-                <div style="position:absolute; bottom:-40px; display:flex; gap:12px;">
-                    <button id="prevBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:44px; height:44px; border-radius:50%; cursor:pointer;">←</button>
-                    <button id="nextBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:44px; height:44px; border-radius:50%; cursor:pointer;">→</button>
+
+                <div class="stack-portal">
+                    <div id="stackContainer">
+                        <!-- S-Tier Cards Initialized by Engine -->
+                    </div>
+                    <div style="position:absolute; bottom:-50px; display:flex; gap:12px;">
+                        <button id="prevBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:48px; height:48px; border-radius:50%; cursor:pointer; font-size:1.2rem">←</button>
+                        <button id="nextBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:48px; height:48px; border-radius:50%; cursor:pointer; font-size:1.2rem">→</button>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
         <!-- GLOBAL TRENDING GRID -->
-        <div style="margin-top:8rem; display:flex; justify-content:space-between; align-items:flex-end;">
-            <div>
-                <h2 style="font-family:var(--font-display); font-size:1.8rem; font-weight:800;">Global Trending</h2>
-                <p style="color:var(--text-muted); font-size:0.9rem;">Most engaged titles across the cluster</p>
+        <section>
+            <div class="section-header">
+                <h2 class="section-title">Global <em>Trending</em></h2>
+                <div class="nav-link" style="background:var(--glass-surface); cursor:pointer;">View Archive</div>
             </div>
-            <div class="nav-link" style="background:var(--glass-surface); cursor:pointer;">View All Archive</div>
-        </div>
 
-        <div id="trendingGrid" class="grid-container">
-            <!-- Dynamic Grid Injected by Engine -->
-        </div>
+            <div class="chip-container">
+                <div class="chip active">All Genres</div>
+                <div class="chip">⚡ Action</div>
+                <div class="chip">🌸 Manga</div>
+                <div class="chip">🚀 Sci-Fi</div>
+                <div class="chip">🔮 Fantasy</div>
+            </div>
+
+            <div id="trendingGrid" class="stier-grid">
+                <!-- Dynamic Grid Injected by Engine -->
+            </div>
+        </section>
     </main>
 
-    <!-- HIGH-FIDELITY MODAL SYSTEM -->
-    <div id="modalOverlay" class="modal-overlay">
-        <div class="modal">
-            <div id="modalBg" class="modal-header">
-                <div class="modal-header-gradient"></div>
-                <button id="modalClose" class="modal-close">×</button>
+    <!-- HIGH-FIDELITY DETAIL SYSTEM -->
+    <div id="modalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(15px); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--bg-deep); border:1px solid var(--glass-border); border-radius:var(--radius-xl); width:100%; max-width:600px; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 50px 100px rgba(0,0,0,0.9);">
+            <div id="modalBg" style="height:300px; background-size:cover; background-position:center; position:relative;">
+                <div style="position:absolute; inset:0; background:linear-gradient(to bottom, transparent, var(--bg-deep));"></div>
+                <button id="modalClose" style="position:absolute; top:20px; right:20px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:20px; cursor:pointer;">×</button>
             </div>
-            <div class="modal-body">
-                <h2 id="modalTitle" class="modal-title">Title</h2>
-                <div id="modalTags" class="modal-tags"></div>
-                <p id="modalDesc" class="modal-desc"></p>
-                <div id="modalMeta" class="modal-meta"></div>
-                <div class="modal-cta">
-                    <button id="modalWatchBtn" class="btn-premium btn-primary" style="flex:1">Access Archive Content</button>
-                    <button class="btn-premium" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white;">Add to Library</button>
+            <div style="padding:0 40px 40px;">
+                <h2 id="modalTitle" style="font-family:'Syne'; font-size:2.2rem; font-weight:800; margin-bottom:15px;">Title</h2>
+                <div id="modalTags" style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;"></div>
+                <p id="modalDesc" style="color:var(--text-muted); line-height:1.8; margin-bottom:30px;"></p>
+                <div id="modalMeta" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; background:rgba(255,255,255,0.02); padding:20px; border-radius:20px; border:1px solid var(--glass-border); text-align:center; margin-bottom:30px;"></div>
+                <div style="display:flex; gap:15px;">
+                    <button id="modalWatchBtn" class="btn-stier btn-primary" style="flex:1">Access Archive Content</button>
+                    <button class="btn-stier" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white;">Add to Library</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- CORE ENGINE START -->
+    <!-- CORE ENGINE -->
     <script src="app.js" defer></script>
 </body>
 </html>

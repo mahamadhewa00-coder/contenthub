@@ -1,0 +1,13 @@
+{
+  "name": "comicnight-stier",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Professional Comic & Manga Platform",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "framer-motion": "^10.16.4",
+    "lucide-react": "^0.292.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
+  }
+}
