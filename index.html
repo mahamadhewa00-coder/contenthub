@@ -3,124 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComicNight — Digital Comic Archive</title>
+    <title>ComicNight — Premium Digital Comic Archive</title>
 
-    <!-- 2026 PERFORMANCE OPTIMIZATION -->
+    <!-- 2026 PERFORMANCE ARCHITECTURE -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-    <!-- FAIL-SAFE SDK LOADING -->
+    <!-- FAIL-SAFE SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
 <body>
 
-    <!-- HARDWARE-ACCELERATED VISUALS -->
+    <!-- HIGH-FIDELITY BACKGROUND -->
     <div class="blobs">
         <div class="blob b1"></div>
         <div class="blob b2"></div>
         <div class="blob b3"></div>
     </div>
 
-    <!-- PROACTIVE UI MODULES -->
-    <div id="maintenance-overlay" class="modal-overlay" style="display:none; background:var(--bg); z-index:10000; flex-direction:column; gap:20px; opacity:1">
-        <h1 style="font-family:'Syne'; font-size:clamp(32px, 5vw, 64px); letter-spacing:-2px">SYSTEM UPDATE</h1>
-        <p style="color:var(--muted); font-size:18px; max-width:500px; text-align:center">The archive is currently undergoing scheduled optimization. Please return shortly.</p>
-        <div class="status-online" style="width:40px; height:4px; border-radius:10px"></div>
+    <!-- PROACTIVE UI OVERLAYS -->
+    <div id="maintenance-overlay" style="display:none; position:fixed; inset:0; background:var(--bg-main); z-index:10000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem;">
+        <h1 style="font-family:var(--font-display); font-size:clamp(2rem, 5vw, 4rem); margin-bottom:1.5rem;">ARCHIVE OPTIMIZATION</h1>
+        <p style="color:var(--text-muted); font-size:1.1rem; max-width:500px;">We are currently fine-tuning the system for a superior reading experience. Please stand by.</p>
     </div>
 
-    <div id="announcement-bar" style="display:none;">
+    <div id="announcement-bar" style="display:none; background:linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); color:white; padding:10px; text-align:center; font-size:0.85rem; font-weight:700; position:relative; z-index:1001;">
         <span id="announcement-text"></span>
     </div>
 
-    <!-- CONNECTIVITY ENGINE -->
-    <div id="status-badge" class="status-badge">
-        <div id="status-dot" class="status-dot"></div>
-        <span id="status-text">Connecting...</span>
-    </div>
-
+    <!-- S-TIER NAVIGATION -->
     <header>
-        <div class="logo">
-            <div class="logo-icon">📖</div>
+        <div class="logo" onclick="location.href='index.html'">
+            <div class="logo-symbol">📖</div>
             <span>ComicNight</span>
         </div>
         <nav>
             <a href="index.html" class="nav-link active">Home</a>
             <a href="#" class="nav-link">Archive</a>
-            <a href="#" class="nav-link">Series</a>
             <a href="admin.html" class="nav-link">Portal</a>
         </nav>
-        <div class="header-right">
-            <div class="avatar">U</div>
+        <div id="status-badge" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.3); padding:6px 12px; border-radius:20px; border:1px solid var(--glass-border);">
+            <div id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#22c55e;"></div>
+            <span id="status-text" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Archive Live</span>
         </div>
     </header>
 
     <main>
-        <!-- SMART SEARCH ARCHITECTURE -->
-        <div class="search-wrap">
-            <div class="search-label">Global Search</div>
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="searchInput" placeholder="Query archive by titles, authors, or genres...">
-            </div>
-            <div class="search-results" id="searchResults"></div>
-        </div>
-
-        <!-- ADAPTIVE HERO ARCHITECTURE -->
-        <div class="hero">
-            <div class="hero-info">
-                <div class="badge">Archive Update</div>
-                <h2>Explore the next <span class="hl">digital frontier</span></h2>
-                <p>Curating premium graphic storytelling with high-fidelity visuals. Access our decentralized repository of manga and indie narratives.</p>
-                <div style="display:flex; gap:16px; flex-wrap:wrap">
-                    <button class="join-btn">Initialize Reader →</button>
-                    <button id="promo-btn" class="join-btn" style="background:rgba(255,255,255,0.05); display:none; box-shadow:none; border:1px solid var(--border)">
-                        <i class="fas fa-play" style="font-size:12px; margin-right:8px"></i> Watch Promo
-                    </button>
+        <!-- MODERN HERO INTERFACE -->
+        <section class="hero-container">
+            <div class="hero-content">
+                <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(124,92,252,0.1); border:1px solid rgba(124,92,252,0.2); color:#a78bfa; padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:1.5rem;">
+                    ✨ New Curations Available
+                </div>
+                <h1>Explore the <br><span>Digital Frontier</span></h1>
+                <p>Access a globally synchronized repository of high-fidelity graphic novels and independent manga. Reimagining the digital reading experience.</p>
+                <div class="cta-group">
+                    <button class="btn-premium btn-primary">Initialize Reader →</button>
+                    <button id="promo-btn" class="btn-premium" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; display:none;">Watch Promo</button>
                 </div>
             </div>
 
-            <div class="hero-cards">
-                <div class="stack-container" id="stackContainer">
-                    <div style="text-align: center; padding-top: 100px; color: var(--muted); font-size: 14px; letter-spacing: 2px;">
-                        SYNCHRONIZING ARCHIVE...
-                    </div>
+            <div class="stack-portal">
+                <div id="stackContainer">
+                    <!-- S-Tier Cards Initialized by Engine -->
+                </div>
+                <div style="position:absolute; bottom:-40px; display:flex; gap:12px;">
+                    <button id="prevBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:44px; height:44px; border-radius:50%; cursor:pointer;">←</button>
+                    <button id="nextBtn" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white; width:44px; height:44px; border-radius:50%; cursor:pointer;">→</button>
                 </div>
             </div>
+        </section>
+
+        <!-- GLOBAL TRENDING GRID -->
+        <div style="margin-top:8rem; display:flex; justify-content:space-between; align-items:flex-end;">
+            <div>
+                <h2 style="font-family:var(--font-display); font-size:1.8rem; font-weight:800;">Global Trending</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Most engaged titles across the cluster</p>
+            </div>
+            <div class="nav-link" style="background:var(--glass-surface); cursor:pointer;">View All Archive</div>
         </div>
 
-        <!-- ZERO-BREAK GRID SYSTEM -->
-        <div class="section-header">
-            <div class="section-title">Global <span>Trending</span></div>
-            <div class="nav-link" style="padding:4px 12px; font-size:12px">Full View</div>
+        <div id="trendingGrid" class="grid-container">
+            <!-- Dynamic Grid Injected by Engine -->
         </div>
-        <div class="trending-grid" id="trendingGrid"></div>
     </main>
 
-    <!-- HIGH-FIDELITY MODAL ENGINE -->
-    <div class="modal-overlay" id="modalOverlay">
+    <!-- HIGH-FIDELITY MODAL SYSTEM -->
+    <div id="modalOverlay" class="modal-overlay">
         <div class="modal">
-            <div class="modal-header" id="modalBg">
+            <div id="modalBg" class="modal-header">
                 <div class="modal-header-gradient"></div>
-                <button class="modal-close" id="modalClose">×</button>
+                <button id="modalClose" class="modal-close">×</button>
             </div>
             <div class="modal-body">
-                <div class="modal-title" id="modalTitle">Loading Meta...</div>
-                <div class="modal-tags" id="modalTags"></div>
-                <div class="modal-desc" id="modalDesc">Synchronizing with the Supabase cluster. Please standby.</div>
-                <div class="modal-meta" id="modalMeta"></div>
+                <h2 id="modalTitle" class="modal-title">Title</h2>
+                <div id="modalTags" class="modal-tags"></div>
+                <p id="modalDesc" class="modal-desc"></p>
+                <div id="modalMeta" class="modal-meta"></div>
                 <div class="modal-cta">
-                    <button class="btn-primary" id="modalWatchBtn">Access Content</button>
-                    <button class="btn-secondary">Add to Library</button>
+                    <button id="modalWatchBtn" class="btn-premium btn-primary" style="flex:1">Access Archive Content</button>
+                    <button class="btn-premium" style="background:var(--glass-surface); border:1px solid var(--glass-border); color:white;">Add to Library</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- CORE SCRIPT ENGINE -->
+    <!-- CORE ENGINE START -->
     <script src="app.js" defer></script>
 </body>
 </html>

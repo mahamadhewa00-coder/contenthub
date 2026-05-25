@@ -1,5 +1,6 @@
 /**
- * ComicNight Pro Dashboard — Full-Stack Control Engine (2026 Edition)
+ * ComicNight Pro Dashboard — Enterprise Control Engine (2026)
+ * Architect: Senior Full-Stack Lead
  */
 
 const ADMIN_PASSWORD = "raven00$A";
@@ -8,346 +9,229 @@ const CONFIG = {
     SUPABASE_ANON_KEY: "sb_publishable_WtRQkRCYtZGmxO6qkyfqAg_QRio8UuU"
 };
 
-let sbClient = null;
-let allEntries = [];
-let currentEntryId = null;
-let deleteId = null;
-
-// Standardized DOM Access Object
-const elements = {
-    loginGate: document.getElementById('login-gate'),
-    adminPanel: document.getElementById('admin-panel'),
-    passwordInput: document.getElementById('admin-password'),
-    loginBtn: document.getElementById('login-btn'),
-    loginError: document.getElementById('login-error'),
-
-    entryList: document.getElementById('admin-entry-list'),
-    searchInput: document.getElementById('admin-search'),
-    addBtn: document.getElementById('add-entry-btn'),
-    logoutBtn: document.getElementById('logout-btn'),
-    stickySaveBtn: document.getElementById('sticky-save-btn'),
-
-    drawer: document.getElementById('entry-drawer'),
-    drawerOverlay: document.getElementById('form-overlay'),
-    drawerTitle: document.getElementById('drawer-title'),
-    entryForm: document.getElementById('entry-form'),
-    closeDrawerBtn: document.getElementById('close-drawer'),
-    cancelBtn: document.getElementById('cancel-btn'),
-
-    confirmOverlay: document.getElementById('confirm-overlay'),
-    confirmDeleteBtn: document.getElementById('confirm-delete-btn'),
-    cancelDeleteBtn: document.getElementById('cancel-delete-btn'),
-
-    // Proactive Settings
-    settingMaintenance: document.getElementById('setting-maintenance'),
-    settingAnnouncement: document.getElementById('setting-announcement'),
-    settingVideo: document.getElementById('setting-video'),
-    saveSettingsBtn: document.getElementById('save-settings-btn'),
-
-    // Core Data Fields (Strict Schema Mapping)
-    formTitle: document.getElementById('form-title'),
-    formDesc: document.getElementById('form-description'),
-    formChapters: document.getElementById('form-chapters'),
-    formVolumes: document.getElementById('form-volumes'),
-    formRating: document.getElementById('form-rating'),
-    formYear: document.getElementById('form-year'),
-    formImageHidden: document.getElementById('form-image'),
-    formLink: document.getElementById('form-link'),
-    formTags: document.getElementById('form-tags'),
-    formEmoji: document.getElementById('form-emoji'),
-    formBg: document.getElementById('form-bg'),
-    formActive: document.getElementById('form-active'),
-    formFileInput: document.getElementById('form-file-input'),
-
-    // Auth Display
-    formSbUrl: document.getElementById('form-sb-url'),
-    formSbKey: document.getElementById('form-sb-key'),
-
-    // Layout Indicators
-    imagePreview: document.getElementById('image-preview'),
-    previewImg: document.getElementById('preview-img'),
-    statTotal: document.getElementById('stat-total'),
-    statToday: document.getElementById('stat-today'),
-    statFiles: document.getElementById('stat-files')
-};
-
 /**
- * ── ARCHITECTURAL INITIALIZATION ──
+ * ── PRO DASHBOARD CLASS ──
  */
-function init() {
-    if (!initSupabase()) {
-        showToast("Supabase Handshake Failed", "error");
+class ComicNightAdmin {
+    constructor() {
+        this.sb = null;
+        this.entries = [];
+        this.currentId = null;
+        this.isLoggedIn = false;
+
+        this.init();
     }
 
-    if (sessionStorage.getItem('isLoggedIn') === 'true') {
-        showAdminPanel();
-    }
+    init() {
+        this.initSupabase();
+        this.setupAuth();
+        this.attachEvents();
 
-    attachEventListeners();
-    syncUIState();
-}
-
-function initSupabase() {
-    if (window.supabase) {
-        sbClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        return true;
-    }
-    return false;
-}
-
-function attachEventListeners() {
-    elements.loginBtn?.addEventListener('click', handleLogin);
-    elements.passwordInput?.addEventListener('keypress', e => e.key === 'Enter' && handleLogin());
-    elements.logoutBtn?.addEventListener('click', handleLogout);
-    elements.addBtn?.addEventListener('click', () => openDrawer());
-    elements.closeDrawerBtn?.addEventListener('click', closeDrawer);
-    elements.cancelBtn?.addEventListener('click', closeDrawer);
-    elements.drawerOverlay?.addEventListener('click', closeDrawer);
-    elements.searchInput?.addEventListener('input', handleSearch);
-    elements.saveSettingsBtn?.addEventListener('click', updateSettings);
-    elements.entryForm?.addEventListener('submit', handleFormSubmit);
-    elements.confirmDeleteBtn?.addEventListener('click', deleteEntry);
-    elements.cancelDeleteBtn?.addEventListener('click', () => elements.confirmOverlay?.classList.remove('active'));
-
-    elements.formFileInput?.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = ev => {
-                if (elements.previewImg) elements.previewImg.src = ev.target.result;
-                elements.imagePreview?.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            this.showDashboard();
         }
-    });
-}
-
-function syncUIState() {
-    if (elements.formSbUrl) elements.formSbUrl.value = CONFIG.SUPABASE_URL;
-    if (elements.formSbKey) elements.formSbKey.value = "••••••••••••••••";
-}
-
-/**
- * ── SECURITY LAYER ──
- */
-function handleLogin() {
-    if (elements.passwordInput?.value === ADMIN_PASSWORD) {
-        sessionStorage.setItem('isLoggedIn', 'true');
-        showAdminPanel();
-    } else {
-        elements.loginError?.classList.remove('hidden');
-        setTimeout(() => elements.loginError?.classList.add('hidden'), 3000);
     }
-}
 
-function handleLogout() {
-    sessionStorage.removeItem('isLoggedIn');
-    location.reload();
-}
-
-function showAdminPanel() {
-    elements.loginGate?.classList.add('hidden');
-    elements.adminPanel?.classList.remove('hidden');
-    loadData();
-}
-
-/**
- * ── DATA MANAGEMENT ENGINE ──
- */
-async function loadData() {
-    if (!sbClient) return;
-
-    try {
-        const [entriesRes, settingsRes] = await Promise.all([
-            sbClient.from('comics').select('*').order('created_at', { ascending: false }),
-            sbClient.from('settings').select('*').single()
-        ]);
-
-        if (entriesRes.error) throw entriesRes.error;
-        allEntries = entriesRes.data;
-        renderEntries(allEntries);
-        updateAnalytics(allEntries);
-
-        if (settingsRes.data) {
-            const s = settingsRes.data;
-            if (elements.settingMaintenance) elements.settingMaintenance.checked = s.maintenance_mode;
-            if (elements.settingAnnouncement) elements.settingAnnouncement.value = s.announcement || '';
-            if (elements.settingVideo) elements.settingVideo.value = s.video_ad_url || '';
+    initSupabase() {
+        if (window.supabase) {
+            this.sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         }
-    } catch (e) {
-        showToast(e.message, "error");
     }
-}
 
-function renderEntries(data) {
-    if (!elements.entryList) return;
-    elements.entryList.innerHTML = '';
+    setupAuth() {
+        const loginBtn = document.getElementById('login-btn');
+        const passInput = document.getElementById('admin-password');
 
-    data.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'entry-card';
-        div.innerHTML = `
-            <img src="${entry.cover_url || 'https://via.placeholder.com/64'}" class="entry-img" onerror="this.src='https://via.placeholder.com/64'">
-            <div class="entry-info">
-                <h4>${entry.title}</h4>
-                <p>${entry.chapters} Chapters · ${entry.volumes} Volumes · ${entry.year}</p>
+        loginBtn?.addEventListener('click', () => this.handleLogin(passInput.value));
+        passInput?.addEventListener('keypress', (e) => e.key === 'Enter' && this.handleLogin(passInput.value));
+
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
+            sessionStorage.removeItem('isLoggedIn');
+            location.reload();
+        });
+    }
+
+    handleLogin(pass) {
+        if (pass === ADMIN_PASSWORD) {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            this.showDashboard();
+        } else {
+            this.showToast("Unauthorized Access", "error");
+        }
+    }
+
+    async showDashboard() {
+        document.getElementById('login-gate').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        await this.loadData();
+    }
+
+    /**
+     * ── DATA ENGINE ──
+     */
+    async loadData() {
+        try {
+            const { data, error } = await this.sb.from('comics').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            this.entries = data;
+            this.render();
+            this.updateStats();
+        } catch (e) {
+            this.showToast(e.message, "error");
+        }
+    }
+
+    render() {
+        const list = document.getElementById('admin-entry-list');
+        if (!list) return;
+
+        list.innerHTML = this.entries.map(entry => `
+            <div class="entry-card">
+                <img src="${entry.cover_url}" class="entry-img" onerror="this.src='https://via.placeholder.com/80x110'">
+                <div class="entry-info">
+                    <h4>${entry.title}</h4>
+                    <p>${entry.chapters} Chapters · ${entry.volumes} Vol · ${entry.year}</p>
+                </div>
+                <div class="entry-actions">
+                    <button class="edit-btn" onclick="admin.openDrawer('${entry.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="delete-btn" onclick="admin.confirmDelete('${entry.id}')"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
-            <div class="entry-actions">
-                <button class="edit-btn" data-id="${entry.id}"><i class="fas fa-pen-to-square"></i></button>
-                <button class="delete-btn" data-id="${entry.id}"><i class="fas fa-trash-can"></i></button>
-            </div>
-        `;
+        `).join('');
+    }
 
-        div.querySelector('.edit-btn').onclick = () => openDrawer(entry.id);
-        div.querySelector('.delete-btn').onclick = () => showConfirmDelete(entry.id);
+    updateStats() {
+        document.getElementById('stat-total').textContent = this.entries.length;
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('stat-today').textContent = this.entries.filter(e => e.created_at?.startsWith(today)).length;
+    }
 
-        elements.entryList.appendChild(div);
-    });
-}
+    /**
+     * ── ATOMIC FORM HANDLING ──
+     */
+    attachEvents() {
+        document.getElementById('add-entry-btn')?.addEventListener('click', () => this.openDrawer());
+        document.getElementById('close-drawer')?.addEventListener('click', () => this.closeDrawer());
+        document.getElementById('form-overlay')?.addEventListener('click', () => this.closeDrawer());
+        document.getElementById('entry-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
 
-function updateAnalytics(data) {
-    if (elements.statTotal) elements.statTotal.textContent = data.length;
-    const today = new Date().toISOString().split('T')[0];
-    const count = data.filter(e => e.created_at?.startsWith(today)).length;
-    if (elements.statToday) elements.statToday.textContent = count;
-}
+        // Settings Sync
+        document.getElementById('save-settings-btn')?.addEventListener('click', () => this.updateSettings());
+    }
 
-/**
- * ── ATOMIC FORM HANDLING ──
- */
-function openDrawer(id = null) {
-    currentEntryId = id;
-    if (elements.drawerTitle) elements.drawerTitle.textContent = id ? 'Revise Archive Entry' : 'Integrate New Story';
-    
-    if (id) {
-        const entry = allEntries.find(e => e.id === id);
-        if (entry) {
-            elements.formTitle.value = entry.title || '';
-            elements.formDesc.value = entry.description || '';
-            elements.formChapters.value = entry.chapters || 0;
-            elements.formVolumes.value = entry.volumes || 0;
-            elements.formRating.value = entry.rating || 0;
-            elements.formYear.value = entry.year || 2024;
-            elements.formImageHidden.value = entry.cover_url || '';
-            elements.formLink.value = entry.link || '';
-            elements.formTags.value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
-            elements.formEmoji.value = entry.emoji || '📖';
-            elements.formBg.value = entry.bg || '';
-            elements.formActive.checked = entry.is_active !== false;
-            
-            if (entry.cover_url && elements.previewImg) {
-                elements.previewImg.src = entry.cover_url;
-                elements.imagePreview?.classList.remove('hidden');
+    openDrawer(id = null) {
+        this.currentId = id;
+        const drawer = document.getElementById('entry-drawer');
+        const overlay = document.getElementById('form-overlay');
+        const form = document.getElementById('entry-form');
+
+        form.reset();
+        document.getElementById('drawer-title').textContent = id ? "Refine Story Archive" : "Integrate New Work";
+
+        if (id) {
+            const entry = this.entries.find(e => e.id === id);
+            if (entry) {
+                // Precise mapping
+                document.getElementById('form-title').value = entry.title;
+                document.getElementById('form-description').value = entry.description;
+                document.getElementById('form-chapters').value = entry.chapters;
+                document.getElementById('form-volumes').value = entry.volumes;
+                document.getElementById('form-rating').value = entry.rating;
+                document.getElementById('form-year').value = entry.year;
+                document.getElementById('form-image').value = entry.cover_url;
+                document.getElementById('form-link').value = entry.link;
+                document.getElementById('form-tags').value = entry.tags.join(', ');
+                document.getElementById('form-emoji').value = entry.emoji;
+                document.getElementById('form-bg').value = entry.bg;
+                document.getElementById('form-active').checked = entry.is_active;
             }
         }
-    } else {
-        elements.entryForm?.reset();
-        elements.imagePreview?.classList.add('hidden');
-        elements.formImageHidden.value = '';
+
+        drawer.classList.add('active');
+        overlay.classList.add('active');
     }
 
-    elements.drawer?.classList.add('active');
-    elements.drawerOverlay?.classList.add('active');
-}
+    closeDrawer() {
+        document.getElementById('entry-drawer').classList.remove('active');
+        document.getElementById('form-overlay').classList.remove('active');
+    }
 
-function closeDrawer() {
-    elements.drawer?.classList.remove('active');
-    elements.drawerOverlay?.classList.remove('active');
-}
+    async handleSubmit(e) {
+        e.preventDefault();
+        const file = document.getElementById('form-file-input').files[0];
+        let cover_url = document.getElementById('form-image').value;
 
-async function handleFormSubmit(e) {
-    e.preventDefault();
-    if (!sbClient) return;
+        try {
+            if (file) {
+                this.showToast("Uploading Core Media...", "info");
+                const path = `covers/${Date.now()}_${file.name}`;
+                const { error: upErr } = await this.sb.storage.from('comic-covers').upload(path, file);
+                if (upErr) throw upErr;
+                const { data: { publicUrl } } = this.sb.storage.from('comic-covers').getPublicUrl(path);
+                cover_url = publicUrl;
+            }
 
-    const file = elements.formFileInput.files[0];
-    let coverUrl = elements.formImageHidden.value;
+            const payload = {
+                title: document.getElementById('form-title').value,
+                description: document.getElementById('form-description').value,
+                chapters: parseInt(document.getElementById('form-chapters').value) || 0,
+                volumes: parseInt(document.getElementById('form-volumes').value) || 0,
+                rating: parseFloat(document.getElementById('form-rating').value) || 0,
+                year: parseInt(document.getElementById('form-year').value) || 2024,
+                cover_url: cover_url,
+                link: document.getElementById('form-link').value,
+                tags: document.getElementById('form-tags').value.split(',').map(t => t.trim()),
+                emoji: document.getElementById('form-emoji').value || '📖',
+                bg: document.getElementById('form-bg').value || '#12122c',
+                is_active: document.getElementById('form-active').checked
+            };
 
-    try {
-        if (file) {
-            showToast("Encrypting & Uploading Media...", "info");
-            const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${file.name.split('.').pop()}`;
-            const { data: upData, error: upErr } = await sbClient.storage.from('comic-covers').upload(fileName, file);
-            if (upErr) throw upErr;
-            const { data: { publicUrl } } = sbClient.storage.from('comic-covers').getPublicUrl(fileName);
-            coverUrl = publicUrl;
+            const result = this.currentId
+                ? await this.sb.from('comics').update(payload).eq('id', this.currentId)
+                : await this.sb.from('comics').insert([payload]);
+
+            if (result.error) throw result.error;
+
+            this.showToast("Data Cluster Synchronized", "success");
+            this.closeDrawer();
+            await this.loadData();
+        } catch (err) {
+            this.showToast(err.message, "error");
         }
+    }
 
+    async updateSettings() {
         const payload = {
-            title: elements.formTitle.value,
-            description: elements.formDesc.value,
-            chapters: parseInt(elements.formChapters.value) || 0,
-            volumes: parseInt(elements.formVolumes.value) || 0,
-            rating: parseFloat(elements.formRating.value) || 0,
-            year: parseInt(elements.formYear.value) || 2024,
-            cover_url: coverUrl,
-            link: elements.formLink.value,
-            tags: elements.formTags.value.split(',').map(t => t.trim()).filter(t => t),
-            emoji: elements.formEmoji.value || '📖',
-            bg: elements.formBg.value || '#12122c',
-            is_active: elements.formActive.checked
+            id: 1,
+            maintenance_mode: document.getElementById('setting-maintenance').checked,
+            announcement: document.getElementById('setting-announcement').value,
+            video_ad_url: document.getElementById('setting-video').value
         };
 
-        const result = currentEntryId
-            ? await sbClient.from('comics').update(payload).eq('id', currentEntryId)
-            : await sbClient.from('comics').insert([payload]);
+        const { error } = await this.sb.from('settings').upsert(payload);
+        if (error) this.showToast(error.message, "error");
+        else this.showToast("Global Protocol Updated", "success");
+    }
 
-        if (result.error) throw result.error;
+    async confirmDelete(id) {
+        if (confirm("Permanently Eradicate this Entry?")) {
+            const { error } = await this.sb.from('comics').delete().eq('id', id);
+            if (error) this.showToast(error.message, "error");
+            else {
+                this.showToast("Record Purged", "success");
+                await this.loadData();
+            }
+        }
+    }
 
-        showToast("Synchronized with Supabase", "success");
-        closeDrawer();
-        loadData();
-    } catch (err) {
-        showToast(err.message, "error");
+    showToast(msg, type = "success") {
+        const container = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `<span>${msg}</span>`;
+        container?.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
     }
 }
 
-/**
- * ── GLOBAL PROTOCOLS ──
- */
-async function updateSettings() {
-    if (!sbClient) return;
-    const payload = {
-        id: 1,
-        maintenance_mode: elements.settingMaintenance.checked,
-        announcement: elements.settingAnnouncement.value,
-        video_ad_url: elements.settingVideo.value
-    };
-
-    const { error } = await sbClient.from('settings').upsert(payload);
-    if (error) showToast(error.message, "error");
-    else showToast("Site Protocol Updated", "success");
-}
-
-function handleSearch() {
-    const q = elements.searchInput.value.toLowerCase();
-    const filtered = allEntries.filter(e => e.title?.toLowerCase().includes(q) || e.tags?.some(t => t.toLowerCase().includes(q)));
-    renderEntries(filtered);
-}
-
-function showConfirmDelete(id) {
-    deleteId = id;
-    elements.confirmOverlay?.classList.add('active');
-}
-
-async function deleteEntry() {
-    if (!sbClient || !deleteId) return;
-    const { error } = await sbClient.from('comics').delete().eq('id', deleteId);
-    if (error) showToast(error.message, "error");
-    else {
-        showToast("Entry Purged", "success");
-        elements.confirmOverlay?.classList.remove('active');
-        loadData();
-    }
-}
-
-function showToast(msg, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-triangle-exclamation'}"></i><span>${msg}</span>`;
-    container.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(30px)'; setTimeout(() => t.remove(), 400); }, 3500);
-}
-
-document.addEventListener('DOMContentLoaded', init);
+const admin = new ComicNightAdmin();
