@@ -81,10 +81,10 @@ function renderAdminList() {
     listContainer.innerHTML = comics.map(c => `
         <div class="admin-item">
             <div class="item-meta">
-                ${c.cover_url ? `<img src="${c.cover_url}" style="width:45px; height:45px; border-radius:8px; object-fit:cover;">` : `<div style="font-size:24px;">${c.emoji || '📚'}</div>`}
+                ${c.cover_url ? `<img src="${c.cover_url}" style="width:45px; height:45px; border-radius:8px; object-fit:cover;">` : `<div style="font-size:24px;">📚</div>`}
                 <div>
                     <div class="item-title">${c.title}</div>
-                    <div class="item-sub">⭐ ${c.rating || 0} · 📖 ${c.chapters || 0} Chapters · 📅 ${c.year || 'N/A'}</div>
+                    <div class="item-sub">⭐ ${c.rating || 0} · 📖 ${c.chapters || 0} Chapters</div>
                 </div>
             </div>
             <div class="item-actions">
@@ -102,7 +102,6 @@ function updateStats() {
     
     if (totalElem) totalElem.textContent = comics.length;
     
-    // حیسابکردنی ئەوانەی بەپێی کاتی ناوخۆیی ئەمڕۆ زیادکراون
     const todayStr = new Date().toDateString();
     const todayCount = comics.filter(c => {
         if (!c.created_at) return false;
@@ -112,16 +111,22 @@ function updateStats() {
     if (todayElem) todayElem.textContent = todayCount;
 }
 
-// ── لۆجیکی کردنەوە و داخستنی Drawer (لێرەدا ناوەکان ڕێکخرانەوە) ──
+// ── لۆجیکی Drawer ──
 const drawer = document.getElementById('entry-drawer');
 const overlay = document.getElementById('form-overlay');
 
 document.getElementById('add-entry-btn')?.addEventListener('click', () => {
     currentEditId = null;
-    document.getElementById('entry-form').reset();
-    document.getElementById('entry-id').value = '';
-    document.getElementById('drawer-title').textContent = 'Add New Comic';
-    document.getElementById('image-preview').classList.add('hidden');
+    const form = document.getElementById('entry-form');
+    if (form) form.reset();
+    
+    const idInput = document.getElementById('entry-id');
+    if (idInput) idInput.value = '';
+    
+    const titleElem = document.getElementById('drawer-title');
+    if (titleElem) titleElem.textContent = 'Add New Comic';
+    
+    document.getElementById('image-preview')?.classList.add('hidden');
     
     drawer?.classList.add('open');
     overlay?.classList.add('open');
@@ -136,7 +141,7 @@ document.getElementById('close-drawer')?.addEventListener('click', closeDrawer);
 document.getElementById('cancel-btn')?.addEventListener('click', closeDrawer);
 overlay?.addEventListener('click', closeDrawer);
 
-// Preview بۆ وێنەکە کاتێک هەڵدەبژێردرێت
+// Preview بۆ وێنەکە
 document.getElementById('form-image-file')?.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -144,13 +149,13 @@ document.getElementById('form-image-file')?.addEventListener('change', function(
         reader.onload = function(event) {
             const previewImg = document.getElementById('preview-img');
             if (previewImg) previewImg.src = event.target.result;
-            document.getElementById('image-preview').classList.remove('hidden');
+            document.getElementById('image-preview')?.classList.remove('hidden');
         };
-        reader.読reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
     }
 });
 
-// ── پاشەکەوتکردن یان دەستکاریکردن لە Supabase ──
+// ── پاشەکەوتکردن لە Supabase ──
 document.getElementById('entry-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -169,25 +174,22 @@ document.getElementById('entry-form')?.addEventListener('submit', async (e) => {
     let coverUrl = comics.find(c => c.id === currentEditId)?.cover_url || "";
 
     try {
-        // ئەگەر وێنەی نوێ هەڵبژێردرابوو، سەرەتا ئەپڵۆدی بکە سەر Storage
         if (fileInput && fileInput.files.length > 0) {
             const file = fileInput.files[0];
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
-            const filePath = `${fileName}`;
 
             const { data: uploadData, error: uploadError } = await supabaseClient
                 .storage
                 .from('comic-covers')
-                .upload(filePath, file);
+                .upload(fileName, file);
 
             if (uploadError) throw uploadError;
 
-            // وەرگرتنی بەستەری گشتی وێنە ئەپڵۆدکراوەکە
             const { data: urlData } = supabaseClient
                 .storage
                 .from('comic-covers')
-                .getPublicUrl(filePath);
+                .getPublicUrl(fileName);
 
             coverUrl = urlData.publicUrl;
         }
@@ -197,7 +199,6 @@ document.getElementById('entry-form')?.addEventListener('submit', async (e) => {
         };
 
         if (currentEditId) {
-            // نوێکردنەوەی کۆمیکی کۆن (Update)
             const { error } = await supabaseClient
                 .from('comics')
                 .update(comicData)
@@ -206,7 +207,6 @@ document.getElementById('entry-form')?.addEventListener('submit', async (e) => {
             if (error) throw error;
             showToast("Comic updated successfully!", "success");
         } else {
-            // زیادکردنی کۆمیکی نوێ (Insert)
             const { error } = await supabaseClient
                 .from('comics')
                 .insert([comicData]);
@@ -232,7 +232,7 @@ window.openEditDrawer = function(id) {
     document.getElementById('form-title').value = c.title || '';
     document.getElementById('form-desc').value = c.description || '';
     document.getElementById('form-link').value = c.link || '';
-    document.getElementById('form-tags').value = Array.isArray(c.tags) ? c.tags.join(', ') : (c.tags || '');
+    document.getElementById('form-tags').value = c.tags || '';
     document.getElementById('form-rating').value = c.rating || '';
     document.getElementById('form-year').value = c.year || '';
     document.getElementById('form-emoji').value = c.emoji || '📚';
@@ -243,9 +243,9 @@ window.openEditDrawer = function(id) {
     if (c.cover_url) {
         const previewImg = document.getElementById('preview-img');
         if (previewImg) previewImg.src = c.cover_url;
-        document.getElementById('image-preview').classList.remove('hidden');
+        document.getElementById('image-preview')?.classList.remove('hidden');
     } else {
-        document.getElementById('image-preview').classList.add('hidden');
+        document.getElementById('image-preview')?.classList.add('hidden');
     }
 
     document.getElementById('drawer-title').textContent = 'Edit Comic';
@@ -253,7 +253,7 @@ window.openEditDrawer = function(id) {
     overlay?.classList.add('open');
 };
 
-// ── سڕینەوەی بابەت ──
+// ── سڕینەوە ──
 let idToDelete = null;
 window.confirmDelete = function(id) {
     idToDelete = id;
@@ -284,29 +284,7 @@ document.getElementById('confirm-delete-btn')?.addEventListener('click', async (
     }
 });
 
-// ── گەڕان (Search) ──
-document.getElementById('admin-search')?.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    if (!query) {
-        loadComics();
-        return;
-    }
-    const filtered = comics.filter(c => 
-        c.title?.toLowerCase().includes(query) || 
-        c.description?.toLowerCase().includes(query)
-    );
-    const listContainer = document.getElementById('admin-entry-list');
-    if (listContainer) {
-        if (filtered.length === 0) {
-            listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No matching comics found.</div>';
-            return;
-        }
-        comics = filtered;
-        renderAdminList();
-    }
-});
-
-// ── دروستکردنی ئاگادارکردنەوەکان (Toasts) ──
+// ── دروستکردنی ئاگادارکردنەوەکان ──
 function showToast(message, type = "success") {
     const container = document.getElementById('toast-container') || document.body;
     const toast = document.createElement('div');
@@ -316,7 +294,7 @@ function showToast(message, type = "success") {
         margin-top: 10px; border-left: 4px solid ${type === 'success' ? '#10b981' : '#ef4444'};
         box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: 0.3s;
     `;
-    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+    toast.innerHTML = `${message}`;
     container.appendChild(toast);
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
 }
