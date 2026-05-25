@@ -117,13 +117,19 @@ header .container { display: flex; justify-content: space-between; align-items: 
 .stat-card {
   background: var(--glass-surface);
   border: 1px solid var(--glass-border);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: var(--radius-pro);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s;
 }
+.stat-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.06); }
+.stat-card.highlight { border-color: var(--accent-pro); box-shadow: 0 0 20px rgba(124,92,252,0.1); }
 
-.stat-label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
-.stat-value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; }
+.stat-icon { font-size: 1.2rem; color: var(--accent-pro); margin-bottom: 10px; opacity: 0.8; }
+.stat-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.stat-value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: #fff; }
 
 /* ── ENTRY LIST ── */
 .entry-list { display: grid; gap: 1rem; }

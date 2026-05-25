@@ -81,29 +81,46 @@ class ComicNightAdmin {
         }
     }
 
-    render() {
+    render(data = this.entries) {
         const list = document.getElementById('admin-entry-list');
         if (!list) return;
 
-        list.innerHTML = this.entries.map(entry => `
+        if (data.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted)">No comics found.</div>`;
+            return;
+        }
+
+        list.innerHTML = data.map(entry => `
             <div class="entry-card">
-                <img src="${entry.cover_url}" class="entry-img" onerror="this.src='https://via.placeholder.com/80x110'">
+                <img src="${entry.cover_url || 'https://via.placeholder.com/80x110'}" class="entry-img" onerror="this.src='https://via.placeholder.com/80x110'">
                 <div class="entry-info">
-                    <h4>${entry.title}</h4>
-                    <p>${entry.chapters} Chapters · ${entry.volumes} Vol · ${entry.year}</p>
+                    <h4>${entry.title || 'Untitled'}</h4>
+                    <p>⭐ ${entry.rating || 0} · 📖 ${entry.chapters || 0} Chapters · 📦 ${entry.volumes || 0} Volumes</p>
                 </div>
                 <div class="entry-actions">
-                    <button class="edit-btn" onclick="admin.openDrawer('${entry.id}')"><i class="fas fa-pen"></i></button>
-                    <button class="delete-btn" onclick="admin.confirmDelete('${entry.id}')"><i class="fas fa-trash"></i></button>
+                    <button class="edit-btn" onclick="admin.openDrawer('${entry.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+                    <button class="delete-btn" onclick="admin.confirmDelete('${entry.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
     }
 
     updateStats() {
-        document.getElementById('stat-total').textContent = this.entries.length;
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('stat-today').textContent = this.entries.filter(e => e.created_at?.startsWith(today)).length;
+        const total = document.getElementById('stat-total');
+        const today = document.getElementById('stat-today');
+
+        if (total) total.textContent = this.entries.length;
+
+        if (today) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+            const count = this.entries.filter(e => {
+                if (!e.created_at) return false;
+                const entryDate = new Date(e.created_at).toLocaleDateString('en-CA');
+                return entryDate === dateStr;
+            }).length;
+            today.textContent = count;
+        }
     }
 
     /**
@@ -114,9 +131,47 @@ class ComicNightAdmin {
         document.getElementById('close-drawer')?.addEventListener('click', () => this.closeDrawer());
         document.getElementById('form-overlay')?.addEventListener('click', () => this.closeDrawer());
         document.getElementById('entry-form')?.addEventListener('submit', (e) => this.handleSubmit(e));
+        document.getElementById('admin-search')?.addEventListener('input', () => this.handleSearch());
+
+        // Live Preview for Image URL
+        document.getElementById('form-image')?.addEventListener('input', (e) => {
+            const preview = document.getElementById('preview-img');
+            const wrapper = document.getElementById('image-preview');
+            if (preview && wrapper) {
+                preview.src = e.target.value;
+                wrapper.classList.remove('hidden');
+            }
+        });
+
+        // File input preview (local)
+        document.getElementById('form-file-input')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-img');
+            const wrapper = document.getElementById('image-preview');
+            if (file && preview && wrapper) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    preview.src = ev.target.result;
+                    wrapper.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
         // Settings Sync
         document.getElementById('save-settings-btn')?.addEventListener('click', () => this.updateSettings());
+    }
+
+    handleSearch() {
+        const searchInput = document.getElementById('admin-search');
+        if (!searchInput) return;
+        const q = searchInput.value.toLowerCase();
+        const filtered = this.entries.filter(e =>
+            (e.title && e.title.toLowerCase().includes(q)) ||
+            (e.tags && e.tags.some(t => t.toLowerCase().includes(q))) ||
+            (e.year && e.year.toString().includes(q))
+        );
+        this.render(filtered);
     }
 
     openDrawer(id = null) {

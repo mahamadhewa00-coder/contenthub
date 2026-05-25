@@ -282,8 +282,21 @@ class ComicNightApp {
         const dot = document.getElementById('status-dot');
         if (!text || !dot) return;
 
-        if (type === 'online') { text.textContent = "Archive Live"; dot.style.background = "#22c55e"; }
-        if (type === 'offline') { text.textContent = "Offline Mode"; dot.style.background = "#ef4444"; }
+        if (type === 'online') {
+            text.textContent = "Archive Live";
+            dot.style.background = "#22c55e";
+            dot.style.boxShadow = "0 0 10px #22c55e";
+        }
+        if (type === 'offline') {
+            text.textContent = "Offline Mode";
+            dot.style.background = "#ef4444";
+            dot.style.boxShadow = "0 0 10px #ef4444";
+        }
+        if (type === 'syncing') {
+            text.textContent = "Synchronizing...";
+            dot.style.background = "#fbbf24";
+            dot.style.boxShadow = "0 0 10px #fbbf24";
+        }
     }
 
     renderEmptyState() { /* Premium Empty State Logic */ }
