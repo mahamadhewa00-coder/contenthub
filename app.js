@@ -1,11 +1,13 @@
 /**
- * ComicNight Frontend Logic - Supabase Integrated
+ * ComicNight Frontend Logic - Supabase Integrated (Production Ready)
  */
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_CONFIG = {
+    url: 'YOUR_SUPABASE_URL',
+    key: 'YOUR_SUPABASE_ANON_KEY'
+};
 
+let sbInstance = null;
 let entries = [];
 let currentIdx = 0;
 let isDragging = false, dragStartX = 0, dragDelta = 0;
@@ -13,46 +15,75 @@ let autoTimer;
 
 // ── Initialize ──
 async function init() {
+    if (!initSupabase()) {
+        console.error("Supabase SDK not loaded or config missing.");
+        document.getElementById('stackContainer').innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--danger);">Configuration Error: Please check Supabase keys.</div>';
+        return;
+    }
+
     await loadEntries();
+
     if (entries.length > 0) {
         buildStack();
         buildTrending();
         startAutoRotate();
     } else {
-        document.getElementById('stackContainer').innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--muted);">No comics found. Add some in the Admin panel!</div>';
+        const container = document.getElementById('stackContainer');
+        if (container) container.innerHTML = '<div style="text-align: center; padding-top: 100px; color: var(--muted);">No comics found. Add some in the Admin panel!</div>';
     }
     setupSearch();
 }
 
+function initSupabase() {
+    if (window.supabase && SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
+        sbInstance = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+        return true;
+    }
+    return false;
+}
+
 async function loadEntries() {
+    if (!sbInstance) return;
+
     try {
         // Check maintenance & announcement
-        const { data: sData } = await _supabase.from('settings').select('*').single();
+        const { data: sData } = await sbInstance.from('settings').select('*').single();
         if (sData) {
             if (sData.maintenance_mode) {
-                document.getElementById('maintenance-overlay').style.display = 'flex';
+                const overlay = document.getElementById('maintenance-overlay');
+                if (overlay) overlay.style.display = 'flex';
                 return;
             }
             if (sData.announcement) {
-                document.getElementById('announcement-bar').style.display = 'block';
-                document.getElementById('announcement-text').textContent = sData.announcement;
+                const bar = document.getElementById('announcement-bar');
+                const text = document.getElementById('announcement-text');
+                if (bar) bar.style.display = 'block';
+                if (text) text.textContent = sData.announcement;
             }
             if (sData.video_ad_url) {
                 const pBtn = document.getElementById('promo-btn');
-                pBtn.style.display = 'flex';
-                pBtn.onclick = () => {
-                    const modal = document.getElementById('modalOverlay');
-                    document.getElementById('modalTitle').textContent = "Featured Promo";
-                    document.getElementById('modalDesc').innerHTML = `<video src="${sData.video_ad_url}" controls autoplay style="width:100%; border-radius:15px"></video>`;
-                    document.getElementById('modalTags').innerHTML = "";
-                    document.getElementById('modalMeta').innerHTML = "";
-                    document.getElementById('modalBg').style.background = "var(--accent)";
-                    modal.classList.add('open');
-                };
+                if (pBtn) {
+                    pBtn.style.display = 'flex';
+                    pBtn.onclick = () => {
+                        const modal = document.getElementById('modalOverlay');
+                        const mTitle = document.getElementById('modalTitle');
+                        const mDesc = document.getElementById('modalDesc');
+                        const mTags = document.getElementById('modalTags');
+                        const mMeta = document.getElementById('modalMeta');
+                        const mBg = document.getElementById('modalBg');
+
+                        if (mTitle) mTitle.textContent = "Featured Promo";
+                        if (mDesc) mDesc.innerHTML = `<video src="${sData.video_ad_url}" controls autoplay style="width:100%; border-radius:15px"></video>`;
+                        if (mTags) mTags.innerHTML = "";
+                        if (mMeta) mMeta.innerHTML = "";
+                        if (mBg) mBg.style.background = "var(--accent)";
+                        if (modal) modal.classList.add('open');
+                    };
+                }
             }
         }
 
-        const { data, error } = await _supabase
+        const { data, error } = await sbInstance
             .from('comics')
             .select('*')
             .eq('is_active', true)
@@ -139,8 +170,11 @@ function goPrev() {
     buildStack();
 }
 
-document.getElementById('nextBtn')?.addEventListener('click', () => { goNext(); resetAutoRotate(); });
-document.getElementById('prevBtn')?.addEventListener('click', () => { goPrev(); resetAutoRotate(); });
+// Event delegation or direct binding
+document.addEventListener('click', e => {
+    if (e.target.id === 'nextBtn') { goNext(); resetAutoRotate(); }
+    if (e.target.id === 'prevBtn') { goPrev(); resetAutoRotate(); }
+});
 
 // ── Drag / Swipe ──
 function setupDrag() {
@@ -183,43 +217,54 @@ function resetAutoRotate() {
 function openModal(idx) {
     const m = entries[idx];
     const modalBg = document.getElementById('modalBg');
+    const modalEmoji = document.getElementById('modalEmoji');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalTags = document.getElementById('modalTags');
+    const modalMeta = document.getElementById('modalMeta');
+    const watchBtn = document.getElementById('modalWatchBtn');
+    const overlay = document.getElementById('modalOverlay');
+
     if (m.image) {
-        modalBg.style.backgroundImage = `url(${m.image})`;
-        modalBg.style.backgroundSize = 'cover';
-        modalBg.style.backgroundPosition = 'center';
-        document.getElementById('modalEmoji').textContent = "";
+        if (modalBg) {
+            modalBg.style.backgroundImage = `url(${m.image})`;
+            modalBg.style.backgroundSize = 'cover';
+            modalBg.style.backgroundPosition = 'center';
+        }
+        if (modalEmoji) modalEmoji.textContent = "";
     } else {
-        modalBg.style.background = m.bg;
-        document.getElementById('modalEmoji').textContent = m.emoji;
+        if (modalBg) modalBg.style.background = m.bg;
+        if (modalEmoji) modalEmoji.textContent = m.emoji;
     }
 
-    document.getElementById('modalTitle').textContent = m.title;
-    document.getElementById('modalDesc').textContent = m.desc;
-    document.getElementById('modalTags').innerHTML = m.genre.map(g => `<span class="tag">${g}</span>`).join('') + (m.year ? `<span class="tag">📅 ${m.year}</span>` : '');
-    document.getElementById('modalMeta').innerHTML = `
+    if (modalTitle) modalTitle.textContent = m.title;
+    if (modalDesc) modalDesc.textContent = m.desc;
+    if (modalTags) modalTags.innerHTML = m.genre.map(g => `<span class="tag">${g}</span>`).join('') + (m.year ? `<span class="tag">📅 ${m.year}</span>` : '');
+    if (modalMeta) modalMeta.innerHTML = `
         <div class="meta-item"><div class="meta-val" style="color:#fbbf24">⭐ ${m.rating}</div><div class="meta-lbl">Rating</div></div>
         <div class="meta-item"><div class="meta-val">${m.seasons || 0}</div><div class="meta-lbl">Volumes</div></div>
         <div class="meta-item"><div class="meta-val">${m.episodes || 0}</div><div class="meta-lbl">Chapters</div></div>
         <div class="meta-item"><div class="meta-val">${m.year || 'N/A'}</div><div class="meta-lbl">Year</div></div>
     `;
 
-    const watchBtn = document.getElementById('modalWatchBtn');
-    if (m.link) {
-        watchBtn.style.display = 'block';
-        watchBtn.onclick = () => window.open(m.link, '_blank');
-    } else {
-        watchBtn.style.display = 'none';
+    if (watchBtn) {
+        if (m.link) {
+            watchBtn.style.display = 'block';
+            watchBtn.onclick = () => window.open(m.link, '_blank');
+        } else {
+            watchBtn.style.display = 'none';
+        }
     }
 
-    document.getElementById('modalOverlay').classList.add('open');
+    if (overlay) overlay.classList.add('open');
 }
 
-document.getElementById('modalClose')?.addEventListener('click', () => {
-    document.getElementById('modalOverlay').classList.remove('open');
-});
-document.getElementById('modalOverlay')?.addEventListener('click', e => {
-    if (e.target === document.getElementById('modalOverlay'))
-        document.getElementById('modalOverlay').classList.remove('open');
+// Direct binding for modal close
+document.addEventListener('click', e => {
+    if (e.target.id === 'modalClose' || e.target.id === 'modalOverlay') {
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) overlay.classList.remove('open');
+    }
 });
 
 // ── Trending grid ──
