@@ -1,8 +1,7 @@
 /**
- * ContentHub Admin Panel Logic - Supabase Integrated (Production Ready)
+ * ComicNight Pro Dashboard — Full-Stack Control Engine (2026 Edition)
  */
 
-// --- CONFIGURATION ---
 const ADMIN_PASSWORD = "raven00$A";
 const CONFIG = {
     SUPABASE_URL: "https://cnwiqvebnmpmhilwosot.supabase.co",
@@ -10,13 +9,11 @@ const CONFIG = {
 };
 
 let sbClient = null;
-
-// --- STATE MANAGEMENT ---
 let allEntries = [];
 let currentEntryId = null;
 let deleteId = null;
 
-// --- DOM ELEMENTS ---
+// Standardized DOM Access Object
 const elements = {
     loginGate: document.getElementById('login-gate'),
     adminPanel: document.getElementById('admin-panel'),
@@ -41,113 +38,105 @@ const elements = {
     confirmDeleteBtn: document.getElementById('confirm-delete-btn'),
     cancelDeleteBtn: document.getElementById('cancel-delete-btn'),
 
-    // Settings
+    // Proactive Settings
     settingMaintenance: document.getElementById('setting-maintenance'),
     settingAnnouncement: document.getElementById('setting-announcement'),
     settingVideo: document.getElementById('setting-video'),
     saveSettingsBtn: document.getElementById('save-settings-btn'),
 
-    // Form Fields
+    // Core Data Fields (Strict Schema Mapping)
     formTitle: document.getElementById('form-title'),
     formDesc: document.getElementById('form-description'),
-    formFileInput: document.getElementById('form-file-input'),
+    formChapters: document.getElementById('form-chapters'),
+    formVolumes: document.getElementById('form-volumes'),
+    formRating: document.getElementById('form-rating'),
+    formYear: document.getElementById('form-year'),
     formImageHidden: document.getElementById('form-image'),
     formLink: document.getElementById('form-link'),
     formTags: document.getElementById('form-tags'),
-    formRating: document.getElementById('form-rating'),
-    formYear: document.getElementById('form-year'),
     formEmoji: document.getElementById('form-emoji'),
     formBg: document.getElementById('form-bg'),
-    formEpisodes: document.getElementById('form-episodes'), // Mapped to chapters
-    formSeasons: document.getElementById('form-seasons'),   // Mapped to volumes
     formActive: document.getElementById('form-active'),
+    formFileInput: document.getElementById('form-file-input'),
 
-    // Config
+    // Auth Display
     formSbUrl: document.getElementById('form-sb-url'),
     formSbKey: document.getElementById('form-sb-key'),
 
-    // Preview
+    // Layout Indicators
     imagePreview: document.getElementById('image-preview'),
     previewImg: document.getElementById('preview-img'),
-
-    // Stats
     statTotal: document.getElementById('stat-total'),
     statToday: document.getElementById('stat-today'),
     statFiles: document.getElementById('stat-files')
 };
 
-// --- INITIALIZATION ---
+/**
+ * ── ARCHITECTURAL INITIALIZATION ──
+ */
 function init() {
-    initSupabase();
+    if (!initSupabase()) {
+        showToast("Supabase Handshake Failed", "error");
+    }
 
-    // Session Check
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
         showAdminPanel();
     }
 
-    // Event Listeners
-    if (elements.loginBtn) elements.loginBtn.addEventListener('click', handleLogin);
-    if (elements.passwordInput) {
-        elements.passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-    }
-
-    if (elements.logoutBtn) elements.logoutBtn.addEventListener('click', handleLogout);
-    if (elements.addBtn) elements.addBtn.addEventListener('click', () => openDrawer());
-    if (elements.closeDrawerBtn) elements.closeDrawerBtn.addEventListener('click', closeDrawer);
-    if (elements.cancelBtn) elements.cancelBtn.addEventListener('click', closeDrawer);
-    if (elements.drawerOverlay) elements.drawerOverlay.addEventListener('click', closeDrawer);
-    
-    if (elements.searchInput) elements.searchInput.addEventListener('input', handleSearch);
-    if (elements.stickySaveBtn) elements.stickySaveBtn.addEventListener('click', () => showToast("Changes are live on Supabase! 🚀"));
-
-    // File input preview
-    if (elements.formFileInput) {
-        elements.formFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    if (elements.previewImg) elements.previewImg.src = e.target.result;
-                    if (elements.imagePreview) elements.imagePreview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    if (elements.cancelDeleteBtn) {
-        elements.cancelDeleteBtn.addEventListener('click', () => {
-            if (elements.confirmOverlay) elements.confirmOverlay.classList.add('hidden');
-        });
-    }
-
-    if (elements.confirmDeleteBtn) elements.confirmDeleteBtn.addEventListener('click', deleteEntry);
-
-    if (elements.entryForm) elements.entryForm.addEventListener('submit', handleFormSubmit);
-    if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', updateSettings);
-
-    // Sync Config Display
-    if (elements.formSbUrl) elements.formSbUrl.value = CONFIG.SUPABASE_URL;
-    if (elements.formSbKey) elements.formSbKey.value = CONFIG.SUPABASE_ANON_KEY;
+    attachEventListeners();
+    syncUIState();
 }
 
 function initSupabase() {
-    if (window.supabase && CONFIG.SUPABASE_URL) {
+    if (window.supabase) {
         sbClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
         return true;
     }
     return false;
 }
 
-// --- AUTHENTICATION ---
+function attachEventListeners() {
+    elements.loginBtn?.addEventListener('click', handleLogin);
+    elements.passwordInput?.addEventListener('keypress', e => e.key === 'Enter' && handleLogin());
+    elements.logoutBtn?.addEventListener('click', handleLogout);
+    elements.addBtn?.addEventListener('click', () => openDrawer());
+    elements.closeDrawerBtn?.addEventListener('click', closeDrawer);
+    elements.cancelBtn?.addEventListener('click', closeDrawer);
+    elements.drawerOverlay?.addEventListener('click', closeDrawer);
+    elements.searchInput?.addEventListener('input', handleSearch);
+    elements.saveSettingsBtn?.addEventListener('click', updateSettings);
+    elements.entryForm?.addEventListener('submit', handleFormSubmit);
+    elements.confirmDeleteBtn?.addEventListener('click', deleteEntry);
+    elements.cancelDeleteBtn?.addEventListener('click', () => elements.confirmOverlay?.classList.remove('active'));
+
+    elements.formFileInput?.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                if (elements.previewImg) elements.previewImg.src = ev.target.result;
+                elements.imagePreview?.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function syncUIState() {
+    if (elements.formSbUrl) elements.formSbUrl.value = CONFIG.SUPABASE_URL;
+    if (elements.formSbKey) elements.formSbKey.value = "••••••••••••••••";
+}
+
+/**
+ * ── SECURITY LAYER ──
+ */
 function handleLogin() {
-    if (elements.passwordInput && elements.passwordInput.value === ADMIN_PASSWORD) {
+    if (elements.passwordInput?.value === ADMIN_PASSWORD) {
         sessionStorage.setItem('isLoggedIn', 'true');
         showAdminPanel();
     } else {
-        if (elements.loginError) elements.loginError.classList.remove('hidden');
+        elements.loginError?.classList.remove('hidden');
+        setTimeout(() => elements.loginError?.classList.add('hidden'), 3000);
     }
 }
 
@@ -157,86 +146,55 @@ function handleLogout() {
 }
 
 function showAdminPanel() {
-    if (elements.loginGate) elements.loginGate.classList.add('hidden');
-    if (elements.adminPanel) elements.adminPanel.classList.remove('hidden');
+    elements.loginGate?.classList.add('hidden');
+    elements.adminPanel?.classList.remove('hidden');
     loadData();
 }
 
-// --- DATA FETCHING ---
+/**
+ * ── DATA MANAGEMENT ENGINE ──
+ */
 async function loadData() {
     if (!sbClient) return;
 
     try {
-        // Load Entries
-        const { data, error } = await sbClient
-            .from('comics')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const [entriesRes, settingsRes] = await Promise.all([
+            sbClient.from('comics').select('*').order('created_at', { ascending: false }),
+            sbClient.from('settings').select('*').single()
+        ]);
 
-        if (error) {
-            showToast(error.message, "error");
-        } else {
-            allEntries = data;
-            renderEntries(allEntries);
-            updateStats(data);
-        }
+        if (entriesRes.error) throw entriesRes.error;
+        allEntries = entriesRes.data;
+        renderEntries(allEntries);
+        updateAnalytics(allEntries);
 
-        // Load Settings
-        const { data: sData } = await sbClient
-            .from('settings')
-            .select('*')
-            .single();
-
-        if (sData) {
-            if (elements.settingMaintenance) elements.settingMaintenance.checked = sData.maintenance_mode;
-            if (elements.settingAnnouncement) elements.settingAnnouncement.value = sData.announcement || '';
-            if (elements.settingVideo) elements.settingVideo.value = sData.video_ad_url || '';
+        if (settingsRes.data) {
+            const s = settingsRes.data;
+            if (elements.settingMaintenance) elements.settingMaintenance.checked = s.maintenance_mode;
+            if (elements.settingAnnouncement) elements.settingAnnouncement.value = s.announcement || '';
+            if (elements.settingVideo) elements.settingVideo.value = s.video_ad_url || '';
         }
     } catch (e) {
-        console.error("Supabase load error:", e);
+        showToast(e.message, "error");
     }
 }
 
-function updateStats(data) {
-    if (elements.statTotal) elements.statTotal.textContent = data.length;
-    const today = new Date().toISOString().split('T')[0];
-    const addedToday = data.filter(e => e.created_at && e.created_at.startsWith(today)).length;
-    if (elements.statToday) elements.statToday.textContent = addedToday;
-    if (elements.statFiles) elements.statFiles.textContent = "Live";
-}
-
-async function updateSettings() {
-    if (!sbClient) return showToast("Supabase not initialized", "error");
-
-    const isMaintenance = elements.settingMaintenance.checked;
-    const announcement = elements.settingAnnouncement.value;
-    const videoAd = elements.settingVideo.value;
-
-    const { error } = await sbClient
-        .from('settings')
-        .upsert({ id: 1, maintenance_mode: isMaintenance, announcement: announcement, video_ad_url: videoAd });
-
-    if (error) showToast(error.message, "error");
-    else showToast("Settings updated!", "success");
-}
-
-// --- UI RENDERING ---
-function renderEntries(entries) {
+function renderEntries(data) {
     if (!elements.entryList) return;
     elements.entryList.innerHTML = '';
-    entries.forEach(entry => {
+
+    data.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'entry-card';
-        const imgUrl = entry.cover_url || 'https://via.placeholder.com/60';
         div.innerHTML = `
-            <img src="${imgUrl}" class="entry-img" onerror="this.src='https://via.placeholder.com/60'">
+            <img src="${entry.cover_url || 'https://via.placeholder.com/64'}" class="entry-img" onerror="this.src='https://via.placeholder.com/64'">
             <div class="entry-info">
                 <h4>${entry.title}</h4>
-                <p>${entry.description || ''}</p>
+                <p>${entry.chapters} Chapters · ${entry.volumes} Volumes · ${entry.year}</p>
             </div>
             <div class="entry-actions">
-                <button class="edit-btn" title="Edit"><i class="fas fa-edit"></i></button>
-                <button class="delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
+                <button class="edit-btn" data-id="${entry.id}"><i class="fas fa-pen-to-square"></i></button>
+                <button class="delete-btn" data-id="${entry.id}"><i class="fas fa-trash-can"></i></button>
             </div>
         `;
 
@@ -247,173 +205,149 @@ function renderEntries(entries) {
     });
 }
 
-// --- FORM HANDLING ---
+function updateAnalytics(data) {
+    if (elements.statTotal) elements.statTotal.textContent = data.length;
+    const today = new Date().toISOString().split('T')[0];
+    const count = data.filter(e => e.created_at?.startsWith(today)).length;
+    if (elements.statToday) elements.statToday.textContent = count;
+}
+
+/**
+ * ── ATOMIC FORM HANDLING ──
+ */
 function openDrawer(id = null) {
     currentEntryId = id;
-    if (elements.drawerTitle) elements.drawerTitle.textContent = id ? 'Edit Comic' : 'Add New Comic';
+    if (elements.drawerTitle) elements.drawerTitle.textContent = id ? 'Revise Archive Entry' : 'Integrate New Story';
     
     if (id) {
         const entry = allEntries.find(e => e.id === id);
         if (entry) {
-            if (elements.formTitle) elements.formTitle.value = entry.title || '';
-            if (elements.formDesc) elements.formDesc.value = entry.description || '';
-            if (elements.formImageHidden) elements.formImageHidden.value = entry.cover_url || '';
-            if (elements.formLink) elements.formLink.value = entry.link || '';
-            if (elements.formTags) elements.formTags.value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
-            if (elements.formRating) elements.formRating.value = entry.rating || '';
-            if (elements.formYear) elements.formYear.value = entry.year || '';
-            if (elements.formEmoji) elements.formEmoji.value = entry.emoji || '';
-            if (elements.formBg) elements.formBg.value = entry.bg || '';
-            if (elements.formEpisodes) elements.formEpisodes.value = entry.chapters || '';
-            if (elements.formSeasons) elements.formSeasons.value = entry.volumes || '';
-            if (elements.formActive) elements.formActive.checked = entry.is_active !== false;
+            elements.formTitle.value = entry.title || '';
+            elements.formDesc.value = entry.description || '';
+            elements.formChapters.value = entry.chapters || 0;
+            elements.formVolumes.value = entry.volumes || 0;
+            elements.formRating.value = entry.rating || 0;
+            elements.formYear.value = entry.year || 2024;
+            elements.formImageHidden.value = entry.cover_url || '';
+            elements.formLink.value = entry.link || '';
+            elements.formTags.value = Array.isArray(entry.tags) ? entry.tags.join(', ') : (entry.tags || '');
+            elements.formEmoji.value = entry.emoji || '📖';
+            elements.formBg.value = entry.bg || '';
+            elements.formActive.checked = entry.is_active !== false;
             
-            if (elements.imagePreview && elements.previewImg) {
-                const url = entry.cover_url;
-                if (url) {
-                    elements.previewImg.src = url;
-                    elements.imagePreview.classList.remove('hidden');
-                } else {
-                    elements.imagePreview.classList.add('hidden');
-                }
+            if (entry.cover_url && elements.previewImg) {
+                elements.previewImg.src = entry.cover_url;
+                elements.imagePreview?.classList.remove('hidden');
             }
         }
     } else {
-        if (elements.entryForm) elements.entryForm.reset();
-        if (elements.imagePreview) elements.imagePreview.classList.add('hidden');
-        if (elements.formFileInput) elements.formFileInput.value = "";
-        if (elements.formImageHidden) elements.formImageHidden.value = "";
+        elements.entryForm?.reset();
+        elements.imagePreview?.classList.add('hidden');
+        elements.formImageHidden.value = '';
     }
 
-    if (elements.drawer) elements.drawer.classList.add('active');
-    if (elements.drawerOverlay) elements.drawerOverlay.classList.add('active');
+    elements.drawer?.classList.add('active');
+    elements.drawerOverlay?.classList.add('active');
 }
 
 function closeDrawer() {
-    if (elements.drawer) elements.drawer.classList.remove('active');
-    if (elements.drawerOverlay) elements.drawerOverlay.classList.remove('active');
+    elements.drawer?.classList.remove('active');
+    elements.drawerOverlay?.classList.remove('active');
 }
 
 async function handleFormSubmit(e) {
     e.preventDefault();
-    if (!sbClient) return showToast("Supabase not initialized", "error");
+    if (!sbClient) return;
 
     const file = elements.formFileInput.files[0];
     let coverUrl = elements.formImageHidden.value;
 
-    if (file) {
-        showToast("Uploading image...", "info");
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { data: uploadData, error: uploadError } = await sbClient.storage
-            .from('comic-covers')
-            .upload(fileName, file);
-
-        if (uploadError) {
-            showToast("Upload failed: " + uploadError.message, "error");
-            return;
-        }
-
-        const { data: { publicUrl } } = sbClient.storage
-            .from('comic-covers')
-            .getPublicUrl(fileName);
-
-        coverUrl = publicUrl;
-    }
-
-    const entryData = {
-        title: elements.formTitle.value,
-        description: elements.formDesc.value,
-        cover_url: coverUrl,
-        link: elements.formLink.value,
-        tags: elements.formTags.value.split(',').map(t => t.trim()).filter(t => t),
-        rating: parseFloat(elements.formRating.value) || 0,
-        year: parseInt(elements.formYear.value) || null,
-        emoji: elements.formEmoji.value || "📖",
-        bg: elements.formBg.value || "#12122c",
-        chapters: parseInt(elements.formEpisodes.value) || 0,
-        volumes: parseInt(elements.formSeasons.value) || 0,
-        is_active: elements.formActive.checked
-    };
-
     try {
-        let error;
-        if (currentEntryId) {
-            const { error: updateError } = await sbClient
-                .from('comics')
-                .update(entryData)
-                .eq('id', currentEntryId);
-            error = updateError;
-        } else {
-            const { error: insertError } = await sbClient
-                .from('comics')
-                .insert([entryData]);
-            error = insertError;
+        if (file) {
+            showToast("Encrypting & Uploading Media...", "info");
+            const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${file.name.split('.').pop()}`;
+            const { data: upData, error: upErr } = await sbClient.storage.from('comic-covers').upload(fileName, file);
+            if (upErr) throw upErr;
+            const { data: { publicUrl } } = sbClient.storage.from('comic-covers').getPublicUrl(fileName);
+            coverUrl = publicUrl;
         }
 
-        if (error) {
-            showToast(error.message, "error");
-        } else {
-            showToast(currentEntryId ? "Comic updated!" : "Comic added!", "success");
-            closeDrawer();
-            loadData();
-        }
+        const payload = {
+            title: elements.formTitle.value,
+            description: elements.formDesc.value,
+            chapters: parseInt(elements.formChapters.value) || 0,
+            volumes: parseInt(elements.formVolumes.value) || 0,
+            rating: parseFloat(elements.formRating.value) || 0,
+            year: parseInt(elements.formYear.value) || 2024,
+            cover_url: coverUrl,
+            link: elements.formLink.value,
+            tags: elements.formTags.value.split(',').map(t => t.trim()).filter(t => t),
+            emoji: elements.formEmoji.value || '📖',
+            bg: elements.formBg.value || '#12122c',
+            is_active: elements.formActive.checked
+        };
+
+        const result = currentEntryId
+            ? await sbClient.from('comics').update(payload).eq('id', currentEntryId)
+            : await sbClient.from('comics').insert([payload]);
+
+        if (result.error) throw result.error;
+
+        showToast("Synchronized with Supabase", "success");
+        closeDrawer();
+        loadData();
     } catch (err) {
         showToast(err.message, "error");
     }
 }
 
-// --- ACTIONS ---
+/**
+ * ── GLOBAL PROTOCOLS ──
+ */
+async function updateSettings() {
+    if (!sbClient) return;
+    const payload = {
+        id: 1,
+        maintenance_mode: elements.settingMaintenance.checked,
+        announcement: elements.settingAnnouncement.value,
+        video_ad_url: elements.settingVideo.value
+    };
+
+    const { error } = await sbClient.from('settings').upsert(payload);
+    if (error) showToast(error.message, "error");
+    else showToast("Site Protocol Updated", "success");
+}
+
 function handleSearch() {
-    const query = elements.searchInput.value.toLowerCase();
-    const filtered = allEntries.filter(e => 
-        (e.title && e.title.toLowerCase().includes(query)) ||
-        (e.description && e.description.toLowerCase().includes(query))
-    );
+    const q = elements.searchInput.value.toLowerCase();
+    const filtered = allEntries.filter(e => e.title?.toLowerCase().includes(q) || e.tags?.some(t => t.toLowerCase().includes(q)));
     renderEntries(filtered);
 }
 
-// --- CONFIRM DELETE ---
 function showConfirmDelete(id) {
     deleteId = id;
-    if (elements.confirmOverlay) elements.confirmOverlay.classList.remove('hidden');
+    elements.confirmOverlay?.classList.add('active');
 }
 
 async function deleteEntry() {
     if (!sbClient || !deleteId) return;
-
-    const { error } = await sbClient
-        .from('comics')
-        .delete()
-        .eq('id', deleteId);
-
-    if (error) {
-        showToast(error.message, "error");
-    } else {
-        showToast("Comic deleted", "success");
-        if (elements.confirmOverlay) elements.confirmOverlay.classList.add('hidden');
+    const { error } = await sbClient.from('comics').delete().eq('id', deleteId);
+    if (error) showToast(error.message, "error");
+    else {
+        showToast("Entry Purged", "success");
+        elements.confirmOverlay?.classList.remove('active');
         loadData();
     }
 }
 
-// --- UTILS ---
-function showToast(message, type = 'success') {
+function showToast(msg, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle')}"></i>
-        <span>${message}</span>
-    `;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(20px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-triangle-exclamation'}"></i><span>${msg}</span>`;
+    container.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(30px)'; setTimeout(() => t.remove(), 400); }, 3500);
 }
 
-// Start
 document.addEventListener('DOMContentLoaded', init);

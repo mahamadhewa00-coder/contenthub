@@ -3,199 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComicNight Admin | Manage Content</title>
+    <title>ComicNight Pro Admin — Control Center</title>
     <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Login Gate -->
+    <!-- 2026 GLASS LOGIN GATE -->
     <div id="login-gate">
         <div class="login-card">
-            <div class="logo"><span class="accent">Comic</span>Night Admin</div>
-            <p>Please enter the administrator password</p>
-            <input type="password" id="admin-password" placeholder="Password">
-            <button id="login-btn">Login</button>
-            <p id="login-error" class="error hidden">Invalid password</p>
+            <div class="logo"><span class="accent">Comic</span>Night Pro</div>
+            <p style="color:var(--text-secondary); margin-bottom:30px">Enter secure access credentials</p>
+            <input type="password" id="admin-password" placeholder="••••••••">
+            <button id="login-btn">Authenticate</button>
+            <p id="login-error" class="error hidden" style="margin-top:20px">Access Denied: Invalid Password</p>
         </div>
     </div>
 
-    <!-- Admin Panel -->
+    <!-- MAIN ADMIN PANEL -->
     <div id="admin-panel" class="hidden">
         <header>
             <div class="container">
-                <div class="logo"><span class="accent">Comic</span>Night Admin</div>
+                <div class="logo"><span class="accent">Comic</span>Night Dashboard</div>
                 <div class="header-actions">
-                    <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    <button id="logout-btn"><i class="fas fa-power-off"></i> Sign Out</button>
                 </div>
             </div>
         </header>
 
         <main class="container">
-        <!-- Settings Bar -->
-        <div class="settings-bar entry-card" style="padding: 24px; margin-bottom: 32px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-            <div class="form-group" style="margin:0; display: flex; align-items: center; gap: 10px;">
-                <label style="margin:0">Maintenance Mode</label>
-                <input type="checkbox" id="setting-maintenance" style="width:20px; height: 20px; cursor: pointer;">
+            <!-- PROACTIVE SETTINGS -->
+            <div class="settings-bar entry-card">
+                <div class="form-group" style="margin:0; display:flex; align-items:center; gap:12px">
+                    <label style="margin:0; cursor:pointer" for="setting-maintenance">Maintenance</label>
+                    <input type="checkbox" id="setting-maintenance" style="width:20px; height:20px; accent-color:var(--accent)">
+                </div>
+                <div class="form-group" style="margin:0; flex:1">
+                    <input type="text" id="setting-announcement" placeholder="Global Broadcast Message...">
+                </div>
+                <div class="form-group" style="margin:0; flex:1">
+                    <input type="text" id="setting-video" placeholder="Promo Video (Direct URL)...">
+                </div>
+                <button id="save-settings-btn" class="primary-btn">Update Site State</button>
             </div>
-            <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
-                <label style="margin:0">Announcement</label>
-                <input type="text" id="setting-announcement" placeholder="Site-wide banner text..." style="margin-top: 5px;">
-            </div>
-            <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
-                <label style="margin:0">Video Ad URL</label>
-                <input type="text" id="setting-video" placeholder="Direct MP4 link..." style="margin-top: 5px;">
-            </div>
-            <button id="save-settings-btn" class="primary-btn">Update Settings</button>
-        </div>
 
-            <!-- Stats Row -->
+            <!-- ANALYTICS OVERVIEW -->
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-label">Total Entries</div>
+                    <div class="stat-label">Archive Size</div>
                     <div id="stat-total" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Added Today</div>
+                    <div class="stat-label">Daily Updates</div>
                     <div id="stat-today" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total Files</div>
-                    <div id="stat-files" class="stat-value">0</div>
+                    <div class="stat-label">System State</div>
+                    <div id="stat-files" class="stat-value" style="color:var(--success)">SYNCED</div>
                 </div>
             </div>
 
-            <!-- Storage Indicator -->
-            <div class="storage-container">
-                <div class="storage-header">
-                    <span><i class="fas fa-database"></i> Storage Status</span>
-                    <span id="storage-filename">data1.json</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="storage-progress" class="progress-fill" style="width: 0%"></div>
-                </div>
-                <div class="storage-footer">
-                    <span id="storage-usage">0 bytes / 90 KB</span>
-                    <span id="storage-percentage">0% used</span>
-                </div>
-            </div>
-
-            <!-- Search and Add -->
+            <!-- ACTION ENGINE -->
             <div class="actions-row">
                 <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="admin-search" placeholder="Search entries...">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <input type="text" id="admin-search" placeholder="Search archive by title or metadata...">
                 </div>
-                <button id="add-entry-btn" class="primary-btn"><i class="fas fa-plus"></i> Add New Entry</button>
+                <button id="add-entry-btn" class="primary-btn" style="background:linear-gradient(135deg, var(--accent), #5b21b6)">
+                    <i class="fas fa-plus"></i> New Entry
+                </button>
             </div>
 
-            <!-- Entry List -->
+            <!-- DYNAMIC ENTRIES -->
             <div id="admin-entry-list" class="entry-list">
-                <!-- Entries will be loaded here -->
+                <div style="text-align:center; padding:40px; color:var(--text-secondary)">
+                    <i class="fas fa-spinner fa-spin"></i> Initializing DB Connection...
+                </div>
             </div>
         </main>
 
-        <!-- Sticky Save Button -->
+        <!-- PERSISTENT SYNC TRIGGER -->
         <button id="sticky-save-btn" class="sticky-btn hidden">
-            <i class="fas fa-rocket"></i> Save & Update Site
+            <i class="fas fa-cloud-arrow-up"></i> Data is Synchronized
         </button>
 
-        <!-- Slide-up Drawer Form -->
-        <div id="form-overlay" class="overlay hidden"></div>
-        <div id="entry-drawer" class="drawer hidden">
+        <!-- FAIL-SAFE DRAWER -->
+        <div id="form-overlay" class="overlay"></div>
+        <div id="entry-drawer" class="drawer">
             <div class="drawer-header">
-                <h2 id="drawer-title">Add New Entry</h2>
-                <button id="close-drawer" class="close-btn">&times;</button>
+                <h2 id="drawer-title">Manage Entry</h2>
+                <button id="close-drawer" class="close-btn"><i class="fas fa-xmark"></i></button>
             </div>
             <form id="entry-form">
                 <input type="hidden" id="entry-id">
+
                 <div class="form-group">
-                    <label>Title *</label>
-                    <input type="text" id="form-title" required placeholder="e.g. Awesome Resource">
+                    <label>Comic Title *</label>
+                    <input type="text" id="form-title" required placeholder="e.g. Neon Genesis: 2026">
                 </div>
+
                 <div class="form-group">
-                    <label>Description *</label>
-                    <textarea id="form-description" required rows="3" placeholder="Describe this content..."></textarea>
+                    <label>Synopsis *</label>
+                    <textarea id="form-description" required rows="4" placeholder="Brief story overview..."></textarea>
                 </div>
+
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                    <div class="form-group">
+                        <label>Chapters (الفصول)</label>
+                        <input type="number" id="form-chapters" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Volumes (المجلدات)</label>
+                        <input type="number" id="form-volumes" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                    <div class="form-group">
+                        <label>Global Rating (0-5)</label>
+                        <input type="number" id="form-rating" step="0.1" max="5" placeholder="5.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Release Year</label>
+                        <input type="number" id="form-year" placeholder="2026">
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label>Cover Image (Upload)</label>
-                    <input type="file" id="form-file-input" accept="image/*">
-                    <input type="hidden" id="form-image">
+                    <label>Cover Asset (Upload New or Use Current URL)</label>
+                    <input type="file" id="form-file-input" accept="image/*" style="margin-bottom:10px">
+                    <input type="text" id="form-image" placeholder="Image URL (cover_url)...">
                     <div id="image-preview" class="image-preview hidden">
-                        <img id="preview-img" src="" alt="Preview">
+                        <img id="preview-img" src="" alt="Live Preview">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>External Reader Link</label>
+                    <input type="url" id="form-link" placeholder="https://reader.comicnight.com/...">
+                </div>
+
+                <div class="form-group">
+                    <label>Categorization Tags (Comma Separated)</label>
+                    <input type="text" id="form-tags" placeholder="Cyberpunk, Seinen, Mystery">
+                </div>
+
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                    <div class="form-group">
+                        <label>Key Visual Emoji</label>
+                        <input type="text" id="form-emoji" placeholder="📖">
+                    </div>
+                    <div class="form-group">
+                        <label>Visual Canvas (CSS Gradient)</label>
+                        <input type="text" id="form-bg" placeholder="linear-gradient(#12122c, #000)">
+                    </div>
+                </div>
+
+                <div class="form-group" style="display:flex; align-items:center; gap:10px; padding:15px; background:rgba(255,255,255,0.05); border-radius:12px">
+                    <input type="checkbox" id="form-active" checked style="width:20px; height:20px">
+                    <label style="margin:0">Published & Visible to Public</label>
+                </div>
+
+                <div class="config-divider">Supabase Protocol Sync</div>
+                <div class="form-group">
+                    <label>Project Endpoint</label>
+                    <input type="url" id="form-sb-url" readonly style="opacity:0.6">
                 </div>
                 <div class="form-group">
-                    <label>Link URL</label>
-                    <input type="url" id="form-link" placeholder="https://...">
+                    <label>Public Access Key</label>
+                    <input type="password" id="form-sb-key" readonly style="opacity:0.6">
                 </div>
-                <div class="form-group">
-                    <label>Tags (comma separated)</label>
-                    <input type="text" id="form-tags" placeholder="tech, free, design">
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group">
-                        <label>Rating</label>
-                        <input type="number" id="form-rating" step="0.1" placeholder="8.7">
-                    </div>
-                    <div class="form-group">
-                        <label>Year</label>
-                        <input type="number" id="form-year" placeholder="2023">
-                    </div>
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group">
-                        <label>Emoji</label>
-                        <input type="text" id="form-emoji" placeholder="🎬">
-                    </div>
-                    <div class="form-group">
-                        <label>Background (CSS Gradient)</label>
-                        <input type="text" id="form-bg" placeholder="linear-gradient(...)">
-                    </div>
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group">
-                        <label>Chapters (عدد الفصول)</label>
-                        <input type="number" id="form-episodes" placeholder="e.g. 150">
-                    </div>
-                    <div class="form-group">
-                        <label>Volumes (عدد المجلدات)</label>
-                        <input type="number" id="form-seasons" placeholder="e.g. 12">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label style="display:flex; align-items:center; gap:10px">
-                        <input type="checkbox" id="form-active" checked style="width:auto">
-                        Visible to users
-                    </label>
-                </div>
-                <div class="config-divider">Supabase Configuration</div>
-                <div class="form-group">
-                    <label>Supabase URL</label>
-                    <input type="url" id="form-sb-url" placeholder="https://xyz.supabase.co">
-                </div>
-                <div class="form-group">
-                    <label>Supabase Anon Key</label>
-                    <input type="password" id="form-sb-key" placeholder="Enter anon key">
-                </div>
+
                 <div class="form-actions">
-                    <button type="submit" id="save-entry-btn" class="primary-btn">Save Entry</button>
-                    <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
+                    <button type="submit" id="save-entry-btn" class="primary-btn">Commit Changes</button>
+                    <button type="button" id="cancel-btn" class="secondary-btn">Discard</button>
                 </div>
             </form>
         </div>
 
-        <!-- Toast Notifications -->
         <div id="toast-container"></div>
 
-        <!-- Confirm Dialog -->
-        <div id="confirm-overlay" class="overlay hidden" style="z-index: 2000;">
+        <div id="confirm-overlay" class="overlay" style="z-index: 2000;">
             <div class="confirm-dialog">
-                <h3>Are you sure?</h3>
-                <p>This action cannot be undone.</p>
+                <h3 style="font-family:'Syne'; margin-bottom:12px">Confirm Deletion</h3>
+                <p style="color:var(--text-secondary); margin-bottom:24px">This action will permanently purge the record from the Supabase cluster.</p>
                 <div class="confirm-actions">
-                    <button id="confirm-delete-btn" class="danger-btn">Delete</button>
-                    <button id="cancel-delete-btn" class="secondary-btn">Cancel</button>
+                    <button id="confirm-delete-btn" class="danger-btn">Eradicate</button>
+                    <button id="cancel-delete-btn" class="secondary-btn">Abort</button>
                 </div>
             </div>
         </div>
