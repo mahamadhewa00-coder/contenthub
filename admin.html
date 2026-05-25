@@ -6,9 +6,9 @@
     <title>ComicNight Admin | Manage Content</title>
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Login Gate -->
     <div id="login-gate">
         <div class="login-card">
             <div class="logo"><span class="accent">Comic</span>Night Admin</div>
@@ -19,7 +19,6 @@
         </div>
     </div>
 
-    <!-- Admin Panel -->
     <div id="admin-panel" class="hidden">
         <header>
             <div class="container">
@@ -31,10 +30,9 @@
         </header>
 
         <main class="container">
-            <!-- Stats Row -->
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-label">Total Entries</div>
+                    <div class="stat-label">Total Comics</div>
                     <div id="stat-total" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
@@ -42,92 +40,86 @@
                     <div id="stat-today" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total Files</div>
-                    <div id="stat-files" class="stat-value">0</div>
+                    <div class="stat-label">Database Status</div>
+                    <div id="stat-files" class="stat-value" style="font-size: 18px; color: #10b981;">Live</div>
                 </div>
             </div>
 
-            <!-- Storage Indicator -->
             <div class="storage-container">
                 <div class="storage-header">
-                    <span><i class="fas fa-database"></i> Storage Status</span>
-                    <span id="storage-filename">data1.json</span>
+                    <span><i class="fas fa-cloud-upload-alt"></i> Supabase Storage Status</span>
+                    <span id="storage-filename">comic-covers bucket</span>
                 </div>
                 <div class="progress-bar">
-                    <div id="storage-progress" class="progress-fill" style="width: 0%"></div>
+                    <div id="storage-progress" class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
                 </div>
                 <div class="storage-footer">
-                    <span id="storage-usage">0 bytes / 90 KB</span>
-                    <span id="storage-percentage">0% used</span>
+                    <span id="storage-usage">Connected Successfully</span>
+                    <span id="storage-percentage">Public Bucket Active</span>
                 </div>
             </div>
 
-            <!-- Search and Add -->
             <div class="actions-row">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="admin-search" placeholder="Search entries...">
+                    <input type="text" id="admin-search" placeholder="Search comics...">
                 </div>
-                <button id="add-entry-btn" class="primary-btn"><i class="fas fa-plus"></i> Add New Entry</button>
+                <button id="add-entry-btn" class="primary-btn"><i class="fas fa-plus"></i> Add New Comic</button>
             </div>
 
-            <!-- Entry List -->
             <div id="admin-entry-list" class="entry-list">
-                <!-- Entries will be loaded here -->
-            </div>
+                </div>
         </main>
 
-        <!-- Sticky Save Button -->
-        <button id="sticky-save-btn" class="sticky-btn hidden">
-            <i class="fas fa-rocket"></i> Save & Update Site
+        <button id="sticky-save-btn" class="sticky-btn">
+            <i class="fas fa-sync"></i> Sync with Supabase
         </button>
 
-        <!-- Slide-up Drawer Form -->
         <div id="form-overlay" class="overlay hidden"></div>
         <div id="entry-drawer" class="drawer hidden">
             <div class="drawer-header">
-                <h2 id="drawer-title">Add New Entry</h2>
+                <h2 id="drawer-title">Add New Comic</h2>
                 <button id="close-drawer" class="close-btn">&times;</button>
             </div>
             <form id="entry-form">
                 <input type="hidden" id="entry-id">
                 <div class="form-group">
                     <label>Title *</label>
-                    <input type="text" id="form-title" required placeholder="e.g. Awesome Resource">
+                    <input type="text" id="form-title" required placeholder="e.g. Solo Leveling">
                 </div>
                 <div class="form-group">
                     <label>Description *</label>
-                    <textarea id="form-description" required rows="3" placeholder="Describe this content..."></textarea>
+                    <textarea id="form-desc" required rows="3" placeholder="Describe this comic or manga..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" id="form-image" placeholder="https://...">
-                    <div id="image-preview" class="image-preview hidden">
-                        <img id="preview-img" src="" alt="Preview">
+                    <label>Comic Cover Image *</label>
+                    <input type="file" id="form-image-file" accept="image/*">
+                    <div id="image-preview" class="image-preview hidden" style="margin-top: 10px;">
+                        <img id="preview-img" src="" alt="Preview" style="max-height: 150px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Link URL</label>
+                    <label>Read Link URL</label>
                     <input type="url" id="form-link" placeholder="https://...">
                 </div>
                 <div class="form-group">
                     <label>Tags (comma separated)</label>
-                    <input type="text" id="form-tags" placeholder="tech, free, design">
+                    <input type="text" id="form-tags" placeholder="Action, Shounen, Fantasy">
                 </div>
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group">
                         <label>Rating</label>
-                        <input type="number" id="form-rating" step="0.1" placeholder="8.7">
+                        <input type="number" id="form-rating" step="0.1" placeholder="9.2">
                     </div>
                     <div class="form-group">
                         <label>Year</label>
-                        <input type="number" id="form-year" placeholder="2023">
+                        <input type="number" id="form-year" placeholder="2026">
                     </div>
                 </div>
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group">
                         <label>Emoji</label>
-                        <input type="text" id="form-emoji" placeholder="🎬">
+                        <input type="text" id="form-emoji" placeholder="📚">
                     </div>
                     <div class="form-group">
                         <label>Background (CSS Gradient)</label>
@@ -137,33 +129,21 @@
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group">
                         <label>Chapters</label>
-                        <input type="number" id="form-episodes" placeholder="10">
+                        <input type="number" id="form-chapters" placeholder="150">
                     </div>
                     <div class="form-group">
                         <label>Volumes</label>
-                        <input type="number" id="form-seasons" placeholder="1">
+                        <input type="number" id="form-volumes" placeholder="12">
                     </div>
                 </div>
-                <div class="config-divider">Configuration</div>
-                <div class="form-group">
-                    <label>Backend API URL</label>
-                    <input type="url" id="form-api-url" placeholder="https://your-api.render.com">
-                </div>
-                <div class="form-group">
-                    <label>API Secret Key</label>
-                    <input type="password" id="form-api-key" placeholder="Enter your secret key">
-                </div>
-                <div class="form-actions">
+
+                <div class="form-actions" style="margin-top: 20px;">
                     <button type="submit" id="save-entry-btn" class="primary-btn">Save Entry</button>
                     <button type="button" id="cancel-btn" class="secondary-btn">Cancel</button>
                 </div>
             </form>
         </div>
 
-        <!-- Toast Notifications -->
-        <div id="toast-container"></div>
-
-        <!-- Confirm Dialog -->
         <div id="confirm-overlay" class="overlay hidden" style="z-index: 2000;">
             <div class="confirm-dialog">
                 <h3>Are you sure?</h3>
