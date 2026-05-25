@@ -111,6 +111,57 @@ class ComicNightApp {
         this.renderGrid();
     }
 
+    /**
+     * ── BULLETPROOF IMAGE RENDERING ENGINE ──
+     */
+    renderPoster(url, title, emoji) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'poster-wrapper';
+        wrapper.style.position = 'relative';
+
+        // 1. Validation Layer
+        if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+            return this.getFallbackUI(title, emoji);
+        }
+
+        // 2. Skeleton Loading State
+        const skeleton = document.createElement('div');
+        skeleton.className = 'image-skeleton';
+        wrapper.appendChild(skeleton);
+
+        // 3. Image with Handlers
+        const img = document.createElement('img');
+        img.className = 'poster-img';
+        img.src = url;
+        img.loading = 'lazy';
+        img.alt = title;
+
+        img.onload = () => {
+            img.classList.add('loaded');
+            skeleton.style.opacity = '0';
+            setTimeout(() => skeleton.remove(), 600);
+        };
+
+        // 4. Zero-Broken-Images Handler
+        img.onerror = () => {
+            wrapper.innerHTML = '';
+            wrapper.appendChild(this.getFallbackUI(title, emoji));
+        };
+
+        wrapper.appendChild(img);
+        return wrapper;
+    }
+
+    getFallbackUI(title, emoji) {
+        const fallback = document.createElement('div');
+        fallback.className = 'fallback-poster';
+        fallback.innerHTML = `
+            <div class="fallback-emoji">${emoji || '📖'}</div>
+            <div class="fallback-title">${title}</div>
+        `;
+        return fallback;
+    }
+
     renderHeroStack() {
         const container = document.getElementById('stackContainer');
         if (!container) return;
@@ -123,13 +174,19 @@ class ComicNightApp {
             const card = document.createElement('div');
             card.className = `stack-card card-pos-${i}`;
 
-            card.innerHTML = `
-                <img src="${entry.cover_url}" class="card-image" loading="lazy">
-                <div class="card-overlay">
-                    <div class="comic-title">${entry.title}</div>
-                    <div class="comic-meta">⭐ ${entry.rating} · ${entry.year}</div>
-                </div>
+            // Integrate Rendering Engine
+            const poster = this.renderPoster(entry.cover_url, entry.title, entry.emoji);
+            poster.className = 'card-image'; // Override class for stack specific styling
+
+            card.appendChild(poster);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'card-overlay';
+            overlay.innerHTML = `
+                <div class="comic-title">${entry.title}</div>
+                <div class="comic-meta">⭐ ${entry.rating} · ${entry.year}</div>
             `;
+            card.appendChild(overlay);
 
             if (i === 0) card.onclick = () => this.openDetails(entry);
             container.appendChild(card);
@@ -139,17 +196,28 @@ class ComicNightApp {
     renderGrid() {
         const grid = document.getElementById('trendingGrid');
         if (!grid) return;
+        grid.innerHTML = '';
 
-        grid.innerHTML = this.entries.map(entry => `
-            <div class="comic-card" onclick="app.openDetailsById('${entry.id}')">
-                <img src="${entry.cover_url}" class="comic-poster" loading="lazy">
-                <div class="comic-title">${entry.title}</div>
-                <div class="comic-meta">
+        this.entries.forEach(entry => {
+            const card = document.createElement('div');
+            card.className = 'comic-card';
+            card.onclick = () => this.openDetailsById(entry.id);
+
+            const poster = this.renderPoster(entry.cover_url, entry.title, entry.emoji);
+            card.appendChild(poster);
+
+            const body = document.createElement('div');
+            body.className = 'card-body';
+            body.innerHTML = `
+                <div class="title">${entry.title}</div>
+                <div class="card-stats">
                     <span>${entry.chapters} Ch.</span>
-                    <span style="color:#fbbf24">⭐ ${entry.rating}</span>
+                    <span class="score">⭐ ${entry.rating}</span>
                 </div>
-            </div>
-        `).join('');
+            `;
+            card.appendChild(body);
+            grid.appendChild(card);
+        });
     }
 
     /**
